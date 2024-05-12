@@ -1,7 +1,8 @@
 import os
 import re
 import logging
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 # Set up logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
@@ -13,38 +14,38 @@ TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 # Queue data structure
 queue = []
 
-def start(update, context):
-    update.message.reply_text("Welcome to the Karaoke Bot! Send a YouTube link to request a song.")
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text("Welcome to the Karaoke Bot! Send a YouTube link to request a song.")
 
-def request_song(update, context):
+async def request_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.message.from_user
     youtube_link = update.message.text
 
     if is_valid_youtube_link(youtube_link):
         queue.append((user.username, youtube_link))
-        update.message.reply_text("Your song request has been added to the queue.")
+        await update.message.reply_text("Your song request has been added to the queue.")
     else:
-        update.message.reply_text("Invalid YouTube link. Please try again.")
+        await update.message.reply_text("Invalid YouTube link. Please try again.")
 
-def is_valid_youtube_link(link):
+def is_valid_youtube_link(link: str) -> bool:
     youtube_regex = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(?:embed\/)?(?:v\/)?(?:shorts\/)?(?:\S+)'
     return re.match(youtube_regex, link) is not None
 
-def next_singer(update, context):
-    if len(queue) > 0:
+async def next_singer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if queue:
         username, youtube_link = queue[0]
-        update.message.reply_text(f"Next singer: {username}\nYouTube link: {youtube_link}")
+        await update.message.reply_text(f"Next singer: {username}\nYouTube link: {youtube_link}")
     else:
-        update.message.reply_text("The queue is currently empty.")
+        await update.message.reply_text("The queue is currently empty.")
 
-def done(update, context):
-    if len(queue) > 0:
+async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if queue:
         username, _ = queue.pop(0)
-        update.message.reply_text(f"Singer {username} marked as done.")
+        await update.message.reply_text(f"Singer {username} marked as done.")
     else:
-        update.message.reply_text("The queue is currently empty.")
+        await update.message.reply_text("The queue is currently empty.")
 
-def remove_singer(update, context):
+async def remove_singer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     username = context.args[0] if context.args else None
 
     if username:
@@ -56,29 +57,27 @@ def remove_singer(update, context):
                 break
 
         if found:
-            update.message.reply_text(f"Singer {username} has been removed from the queue.")
+            await update.message.reply_text(f"Singer {username} has been removed from the queue.")
         else:
-            update.message.reply_text(f"Singer {username} not found in the queue.")
+            await update.message.reply_text(f"Singer {username} not found in the queue.")
     else:
-        update.message.reply_text("Please provide the username of the singer to remove.")
+        await update.message.reply_text("Please provide the username of the singer to remove.")
 
-def error(update, context):
-    logger.warning(f"Update {update} caused error {context.error}")
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.error(f"Exception while handling an update: {context.error}")
 
-def main():
-    updater = Updater(TOKEN, use_context=True)
-    dispatcher = updater.dispatcher
+def main() -> None:
+    application = Application.builder().token(TOKEN).build()
 
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, request_song))
-    dispatcher.add_handler(CommandHandler("nextsinger", next_singer))
-    dispatcher.add_handler(CommandHandler("done", done))
-    dispatcher.add_handler(CommandHandler("remove", remove_singer))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, request_song))
+    application.add_handler(CommandHandler("nextsinger", next_singer))
+    application.add_handler(CommandHandler("done", done))
+    application.add_handler(CommandHandler("remove", remove_singer))
 
-    dispatcher.add_error_handler(error)
+    application.add_error_handler(error_handler)
 
-    updater.start_polling()
-    updater.idle()
+    application.run_polling()
 
 if __name__ == '__main__':
     main()
