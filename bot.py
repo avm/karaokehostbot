@@ -42,43 +42,28 @@ def is_valid_youtube_link(link: str) -> bool:
     youtube_regex = r'(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(?:embed\/)?(?:v\/)?(?:shorts\/)?(?:\S+)'
     return re.match(youtube_regex, link) is not None
 
-async def next_singer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def next_singer_and_done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not is_admin(update.message.from_user.username):
         await update.message.reply_text("Only the admin can use this command.")
         return
 
     # Check if there are any singers in the not_ready_singers list
     for username in not_ready_singers:
-        if user_song_lists[username]:
+        if username in user_song_lists and user_song_lists[username]:
             queue.append(username)
             not_ready_singers.remove(username)
 
     if queue:
-        username = queue[0]
-        if user_song_lists[username]:
-            youtube_link = user_song_lists[username][0]
+        username = queue.pop(0)
+        if username in user_song_lists and user_song_lists[username]:
+            youtube_link = user_song_lists[username].pop(0)
             await update.message.reply_text(f"Next singer: @{username} - {youtube_link}\n\n"
                                             f"Available commands:\n"
-                                            f"/nextsinger - Get the next singer in the queue\n"
-                                            f"/done - Mark the current singer as done\n"
+                                            f"/nextsinger - Get the next singer and mark the current singer as done\n"
                                             f"/remove <username> - Remove a singer from the queue\n"
                                             f"/move <username> - Move a singer to the not_ready_singers list")
         else:
-            queue.pop(0)
-            await next_singer(update, context)
-    else:
-        await update.message.reply_text("The queue is currently empty.")
-
-async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not is_admin(update.message.from_user.username):
-        await update.message.reply_text("Only the admin can use this command.")
-        return
-
-    if queue:
-        username = queue.pop(0)
-        if user_song_lists[username]:
-            user_song_lists[username].pop(0)
-        await update.message.reply_text(f"Singer @{username} marked as done.")
+            await next_singer_and_done(update, context)
     else:
         await update.message.reply_text("The queue is currently empty.")
 
@@ -88,7 +73,6 @@ async def remove_singer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         return
 
     username = context.args[0] if context.args else None
-
 
     if username:
         if username in queue:
@@ -105,6 +89,7 @@ async def move_singer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
 
     username = context.args[0] if context.args else None
+
 
     if username:
         if username in queue:
@@ -147,8 +132,7 @@ def main() -> None:
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, request_song))
-    application.add_handler(CommandHandler("nextsinger", next_singer))
-    application.add_handler(CommandHandler("done", done))
+    application.add_handler(CommandHandler("nextsinger", next_singer_and_done))
     application.add_handler(CommandHandler("remove", remove_singer))
     application.add_handler(CommandHandler("move", move_singer))
     application.add_handler(CommandHandler("clearlist", clear_song_list))
