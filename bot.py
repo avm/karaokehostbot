@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
 # Admin user configuration
-ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME')
+ADMIN_USERNAMES = os.environ.get('ADMIN_USERNAMES').split(',')
 
 # User song lists and queue
 user_song_lists = {}
@@ -137,7 +137,7 @@ async def view_song_list(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text("You have no songs in your list.")
 
 def is_admin(username: str) -> bool:
-    return username == ADMIN_USERNAME
+    return username in ADMIN_USERNAMES
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     logger.error(f"Exception while handling an update: {context.error}")
