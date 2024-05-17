@@ -28,8 +28,8 @@ ADMIN_USERNAMES = os.environ.get("ADMIN_USERNAMES", "").split(",")
 
 
 class DJ:
-    def __init__(self):
-        self.db = shelve.open("bot")
+    def __init__(self, db):
+        self.db = db
         self.names: dict[int, str] = self.db.get("names", {})
         self.queue: list[str] = self.db.get("queue", [])
         self.new_users: list[str] = self.db.get("new_users", [])
@@ -97,10 +97,10 @@ class DJ:
         self.names[user] = name
         if user in self.user_song_lists:
             self.user_song_lists[user].append(link)
-            self.save_song_list(user)
         else:
             self.user_song_lists[user] = [link]
             self.new_users.append(user)
+            self.save_global()
         self.save_song_list(user)
 
     def next(self) -> str:
@@ -137,7 +137,7 @@ class DJ:
         return return_value
 
 
-dj = DJ()
+dj = DJ(shelve.open('bot'))
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:

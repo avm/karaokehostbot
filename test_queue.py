@@ -6,7 +6,7 @@ def format_next(name, song):
 
 
 def test_queue():
-    dj = DJ()
+    dj = DJ({})
     dj.enqueue(1, "avm", "01")
     dj.enqueue(1, "avm", "03")
     dj.enqueue(2, "alice", "02")
@@ -27,7 +27,7 @@ def test_queue():
 
 
 def test_clear():
-    dj = DJ()
+    dj = DJ({})
     dj.enqueue(1, "avm", "01")
     dj.enqueue(1, "avm", "03")
     dj.enqueue(2, "alice", "02")
@@ -41,7 +41,7 @@ def test_clear():
 
 
 def test_empty_queue():
-    dj = DJ()
+    dj = DJ({})
     dj.enqueue(1, "avm", "01")
     dj.enqueue(2, "alice", "02")
     dj.enqueue(2, "alice", "03")
@@ -55,7 +55,7 @@ def test_empty_queue():
 
 
 def test_remove():
-    dj = DJ()
+    dj = DJ({})
     dj.enqueue(1, "avm", "01")
     dj.enqueue(1, "avm", "03")
     dj.enqueue(2, "alice", "02")
