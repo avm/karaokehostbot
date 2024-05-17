@@ -40,7 +40,7 @@ class DJ:
 
     def clear(self, user: int) -> str:
         if self.user_song_lists.get(user):
-            del self.user_song_lists[user]
+            self.user_song_lists[user].clear()
             return "Your song list has been cleared"
         return "You don't have any songs in your list"
 

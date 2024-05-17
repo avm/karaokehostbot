@@ -32,8 +32,11 @@ def test_clear():
     dj.enqueue(1, "avm", "03")
     dj.enqueue(2, "alice", "02")
     dj.enqueue(2, "alice", "04")
+    assert dj.next() == format_next("avm", "01")
     dj.clear(1)
+    dj.enqueue(1, "avm", "Elvis")
     assert dj.next() == format_next("alice", "02")
+    assert dj.next() == format_next("avm", "Elvis")
     assert dj.next() == format_next("alice", "04")
 
 
