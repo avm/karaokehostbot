@@ -1,6 +1,7 @@
 import os
 import re
 import logging
+import shelve
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -28,12 +29,35 @@ ADMIN_USERNAMES = os.environ.get("ADMIN_USERNAMES", "").split(",")
 
 class DJ:
     def __init__(self):
-        self.names: dict[int, str] = {}
-        self.user_song_lists: dict[int, list[str]] = {}
-        self.queue: list[str] = []
-        self.new_users: list[str] = []
-        self.current: tuple[int, str] = None
-        self.replacement_position = 0
+        self.db = shelve.open("bot")
+        self.names: dict[int, str] = self.db.get("names", {})
+        self.queue: list[str] = self.db.get("queue", [])
+        self.new_users: list[str] = self.db.get("new_users", [])
+        self.user_song_lists: dict[int, list[str]] = self.load_song_lists()
+        self.current: tuple[int, str] = self.db.get("current")
+
+    def save_global(self):
+        self.db["names"] = self.names
+        self.db["queue"] = self.queue
+        self.db["new_users"] = self.new_users
+        self.db["current"] = self.current
+
+    def load_song_lists(self):
+        return {user: self.load_song_list(user) for user in self.queue + self.new_users}
+
+    def _song_list_key(self, user: int) -> str:
+        return f"user:{user}"
+
+    def load_song_list(self, user: int) -> list[str] | None:
+        return self.db.get(self._song_list_key(user))
+
+    def save_song_list(self, user: int) -> None:
+        queue = self.user_song_lists.get(user)
+        key = self._song_list_key(user)
+        if queue is None and key in self.db:
+            del self.db[key]
+        elif queue is not None:
+            self.db[key] = queue
 
     def _name(self, chat_id: int) -> str:
         return self.names.get(chat_id, str(chat_id))
@@ -41,6 +65,7 @@ class DJ:
     def clear(self, user: int) -> str:
         if self.user_song_lists.get(user):
             self.user_song_lists[user].clear()
+            self.save_song_list(user)
             return "Your song list has been cleared"
         return "You don't have any songs in your list"
 
@@ -50,8 +75,10 @@ class DJ:
         user, _ = self.current
         if user in self.queue:
             self.queue.remove(user)
+            self.save_global()
             if self.user_song_lists.get(user):
                 del self.user_song_lists[user]
+                self.save_song_list(user)
             return f"{self._name(user)} removed from the queue"
         return f"{self._name(user)} was not on the queue :-o"
 
@@ -70,40 +97,44 @@ class DJ:
         self.names[user] = name
         if user in self.user_song_lists:
             self.user_song_lists[user].append(link)
+            self.save_song_list(user)
         else:
             self.user_song_lists[user] = [link]
             self.new_users.append(user)
-
-    def set_current(self, singer: int, song: str) -> tuple[str, str]:
-        self.current = (singer, song)
-        return self.current
+        self.save_song_list(user)
 
     def next(self) -> str:
-        self.replacement_position = 0
-        ready = self.get_ready_singer()
+        ready = self._get_ready_singer()
         if ready is None:
+            self.save_global()
             return "The queue is empty"
         singer, song = ready
         self.queue.append(singer)
         self.current = (singer, song)
+        self.save_global()
         return f"Next up: {song} (by {self._name(singer)})\nCommands: /next /listall /remove"
 
-    def pop_next_singer(self) -> int | None:
+    def _pop_next_singer(self) -> int | None:
         if self.new_users:
             return self.new_users.pop(0)
         if self.queue:
             return self.queue.pop(0)
         return None
 
-    def get_ready_singer(self) -> tuple[str, str] | None:
+    def _get_ready_singer(self) -> tuple[str, str] | None:
         """Remove singers at `position` until we get to one who has songs in their queue"""
-        while singer := self.pop_next_singer():
+        return_value = None
+        while singer := self._pop_next_singer():
             their_queue = self.user_song_lists.get(singer)
             if not their_queue:
                 self.user_song_lists.pop(singer, None)
+                self.save_song_list(singer)
                 continue
-            return (singer, their_queue.pop(0))
-        return None
+            return_value = (singer, their_queue.pop(0))
+            self.save_song_list(singer)
+            break
+
+        return return_value
 
 
 dj = DJ()
