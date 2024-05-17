@@ -98,8 +98,9 @@ class DJ:
     def get_ready_singer(self) -> tuple[str, str] | None:
         """Remove singers at `position` until we get to one who has songs in their queue"""
         while singer := self.pop_next_singer():
-            their_queue = self.user_song_lists.get(singer, [])
+            their_queue = self.user_song_lists.get(singer)
             if not their_queue:
+                self.user_song_lists.pop(singer, None)
                 continue
             return (singer, their_queue.pop(0))
         return None

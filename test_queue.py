@@ -37,6 +37,20 @@ def test_clear():
     assert dj.next() == format_next("alice", "04")
 
 
+def test_empty_queue():
+    dj = DJ()
+    dj.enqueue(1, "avm", "01")
+    dj.enqueue(2, "alice", "02")
+    dj.enqueue(2, "alice", "03")
+    dj.enqueue(2, "alice", "05")
+    assert dj.next() == format_next("avm", "01")
+    assert dj.next() == format_next("alice", "02")
+    assert dj.next() == format_next("alice", "03")
+    dj.enqueue(1, "avm", "04")
+    assert dj.next() == format_next("avm", "04")
+    assert dj.next() == format_next("alice", "05")
+
+
 def test_remove():
     dj = DJ()
     dj.enqueue(1, "avm", "01")
