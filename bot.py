@@ -12,11 +12,55 @@ logger = logging.getLogger(__name__)
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
 # Admin user configuration
-ADMIN_USERNAMES = os.environ.get('ADMIN_USERNAMES').split(',')
+ADMIN_USERNAMES = os.environ.get('ADMIN_USERNAMES', '').split(',')
 
 # User song lists and queue
 user_song_lists = {}
 queue = []
+
+class DJ:
+    def __init__(self):
+        self.user_song_lists: dict[str, list[str]] = {}
+        self.queue: list[str] = []
+        self.new_users: list[str] = []
+        self.current = None
+        self.replacement_position = 0
+
+    def enqueue(self, user: str, link: str) -> list[str]:
+        if user in self.user_song_lists:
+            self.user_song_lists[user].append(link)
+        else:
+            self.user_song_lists[user] = [link]
+            self.new_users.append(user)
+
+    def merge_new(self):
+        self.queue = self.new_users + self.queue
+        self.new_users = []
+
+    def set_current(self, singer: str, song: str) -> tuple[str, str]:
+        self.current = (singer, song)
+        return self.current
+
+    def next(self) -> str:
+        self.merge_new()
+        self.replacement_position = 0
+        match self.get_ready_singer(0):
+            case None:
+                return "The queue is empty"
+            case singer, song:
+                self.queue.append(singer)
+                self.current = (singer, song)
+                return f"Next up: {singer} — {song}"
+
+    def get_ready_singer(self, position: int = 0) -> tuple[str, str] | None:
+        """ Remove singers at `position` until we get to one who has songs in their queue """
+        while len(self.queue) > position:
+            singer = self.queue.pop(position)
+            their_queue = self.user_song_lists.get(singer, [])
+            if not their_queue:
+                continue
+            return (singer, their_queue.pop(0))
+        return None
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("Welcome to the Karaoke Bot! Send a YouTube link to request a song.")
