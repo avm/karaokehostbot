@@ -37,7 +37,7 @@ class DJ:
         return f'{self._name(user)}:\n' + ('\n'.join(their_queue) if their_queue else '(queue empty)')
 
     def show_all_queues(self) -> str:
-        return 'All queues:\n\n' + '\n'.join(self.show_queue(u) for u in self.new_users + self.queue)
+        return 'All queues:\n\n' + '\n\n'.join(self.show_queue(u) for u in self.new_users + self.queue)
 
     def enqueue(self, user: int, name: str, link: str) -> list[str]:
         self.names[user] = name
@@ -80,7 +80,15 @@ class DJ:
 dj = DJ()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text("Welcome to the Karaoke Bot! Send a YouTube link to request a song.")
+    await update.message.reply_text('\n'.join((
+        "Welcome to the Karaoke Bot! Send a YouTube link to request a song.",
+        "Commands:",
+        "/list — show your queue",
+        "/listall — show all queues",
+        "/clear — clear your queue",
+        "Admin only:",
+        "/next — show next song to be performed",
+    )))
 
 async def request_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.message.from_user
@@ -121,16 +129,13 @@ def format_name(user):
     return f'{user.first_name} {user.last_name}'
 
 async def list_songs(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user = update.message.from_user
-    if user.username in user_song_lists:
-        song_list = user_song_lists[user.username]
-        if song_list:
-            song_list_text = "\n".join(song_list)
-            await update.message.reply_text(f"Your song list:\n{song_list_text}")
-        else:
-            await update.message.reply_text("Your song list is empty.")
-    else:
-        await update.message.reply_text("You have no songs in your list.")
+    user = update.message.chat_id
+    msg = dj.show_queue(user)
+    await update.message.reply_text(msg)
+
+async def list_all_queues(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    msg = dj.show_all_queues()
+    await update.message.reply_text(msg)
 
 def is_admin(username: str) -> bool:
     return username in ADMIN_USERNAMES
@@ -142,11 +147,13 @@ def main() -> None:
     application = Application.builder().token(TOKEN).build()
 
     application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, request_song))
     application.add_handler(CommandHandler("next", next))
     application.add_handler(CommandHandler("remove", remove))
     application.add_handler(CommandHandler("clear", clear))
     application.add_handler(CommandHandler("list", list_songs))
+    application.add_handler(CommandHandler("listall", list_all_queues))
 
     application.add_error_handler(error_handler)
 
