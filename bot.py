@@ -32,6 +32,18 @@ class DJ:
             return "Your song list has been cleared"
         return "You don't have any songs in your list"
 
+    def remove(self) -> str:
+        match self.current:
+            case user, _:
+                if user in self.queue:
+                    self.queue.remove(user)
+                    if self.user_song_lists.get(user):
+                        del self.user_song_lists[user]
+                    return f"{self._name(user)} removed from the queue"
+                return f"{self._name(user)} was not on the queue :-o"
+            case None:
+                return "No current singer"
+
     def show_queue(self, user: int) -> str:
         their_queue = self.user_song_lists.get(user, [])
         return f'{self._name(user)}:\n' + ('\n'.join(their_queue) if their_queue else '(queue empty)')
@@ -59,7 +71,7 @@ class DJ:
             case singer, song:
                 self.queue.append(singer)
                 self.current = (singer, song)
-                return f"Next up: {self._name(singer)} — {song}"
+                return f"Next up: {song} (by {self._name(singer)})\nCommands: /next /listall /remove"
 
     def pop_next_singer(self) -> int | None:
         if self.new_users:
