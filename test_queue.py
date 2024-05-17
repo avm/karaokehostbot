@@ -43,7 +43,11 @@ def test_remove():
     dj.enqueue(1, "avm", "03")
     dj.enqueue(2, "alice", "02")
     dj.enqueue(2, "alice", "04")
+    dj.enqueue(2, "alice", "05")
     assert dj.next() == format_next("avm", "01")
     assert dj.remove() == "avm removed from the queue"
     assert dj.next() == format_next("alice", "02")
     assert dj.next() == format_next("alice", "04")
+    dj.enqueue(1, "avm", "Elvis")
+    assert dj.next() == format_next("avm", "Elvis")
+    assert dj.next() == format_next("alice", "05")
