@@ -9,6 +9,9 @@ from telegram.ext import (
     filters,
     ContextTypes,
 )
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(
