@@ -44,3 +44,6 @@ def test_storage():
     assert db["queue"] == [2]
     assert db["user:1"] == ["Doors"]
     assert db["user:2"] == []
+    dj.remove()
+    assert db["queue"] == []
+    assert "user:2" not in db

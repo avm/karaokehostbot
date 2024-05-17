@@ -76,7 +76,7 @@ class DJ:
         if user in self.queue:
             self.queue.remove(user)
             self.save_global()
-            if self.user_song_lists.get(user):
+            if user in self.user_song_lists:
                 del self.user_song_lists[user]
                 self.save_song_list(user)
             return f"{self._name(user)} removed from the queue"
@@ -137,7 +137,7 @@ class DJ:
         return return_value
 
 
-dj = DJ(shelve.open('bot'))
+dj = DJ(shelve.open("bot"))
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
