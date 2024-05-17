@@ -1,4 +1,4 @@
-from bot import DJ
+from dj import DJ
 from copy import deepcopy
 
 
