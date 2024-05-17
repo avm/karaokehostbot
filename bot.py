@@ -14,53 +14,70 @@ TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 # Admin user configuration
 ADMIN_USERNAMES = os.environ.get('ADMIN_USERNAMES', '').split(',')
 
-# User song lists and queue
-user_song_lists = {}
-queue = []
-
 class DJ:
     def __init__(self):
-        self.user_song_lists: dict[str, list[str]] = {}
+        self.names: dict[int, str] = {}
+        self.user_song_lists: dict[int, list[str]] = {}
         self.queue: list[str] = []
         self.new_users: list[str] = []
-        self.current = None
+        self.current: tuple[int, str] = None
         self.replacement_position = 0
 
-    def enqueue(self, user: str, link: str) -> list[str]:
+    def _name(self, chat_id: int) -> str:
+        return self.names.get(chat_id, str(chat_id))
+
+    def clear(self, user: int) -> str:
+        if self.user_song_lists.get(user):
+            del self.user_song_lists[user]
+            return "Your song list has been cleared"
+        return "You don't have any songs in your list"
+
+    def show_queue(self, user: int) -> str:
+        their_queue = self.user_song_lists.get(user, [])
+        return f'{self._name(user)}:\n' + ('\n'.join(their_queue) if their_queue else '(queue empty)')
+
+    def show_all_queues(self) -> str:
+        return 'All queues:\n\n' + '\n'.join(self.show_queue(u) for u in self.new_users + self.queue)
+
+    def enqueue(self, user: int, name: str, link: str) -> list[str]:
+        self.names[user] = name
         if user in self.user_song_lists:
             self.user_song_lists[user].append(link)
         else:
             self.user_song_lists[user] = [link]
             self.new_users.append(user)
 
-    def merge_new(self):
-        self.queue = self.new_users + self.queue
-        self.new_users = []
-
-    def set_current(self, singer: str, song: str) -> tuple[str, str]:
+    def set_current(self, singer: int, song: str) -> tuple[str, str]:
         self.current = (singer, song)
         return self.current
 
     def next(self) -> str:
-        self.merge_new()
         self.replacement_position = 0
-        match self.get_ready_singer(0):
+        match self.get_ready_singer():
             case None:
                 return "The queue is empty"
             case singer, song:
                 self.queue.append(singer)
                 self.current = (singer, song)
-                return f"Next up: {singer} — {song}"
+                return f"Next up: {self._name(singer)} — {song}"
 
-    def get_ready_singer(self, position: int = 0) -> tuple[str, str] | None:
+    def pop_next_singer(self) -> int | None:
+        if self.new_users:
+            return self.new_users.pop(0)
+        if self.queue:
+            return self.queue.pop(0)
+        return None
+
+    def get_ready_singer(self) -> tuple[str, str] | None:
         """ Remove singers at `position` until we get to one who has songs in their queue """
-        while len(self.queue) > position:
-            singer = self.queue.pop(position)
+        while singer := self.pop_next_singer():
             their_queue = self.user_song_lists.get(singer, [])
             if not their_queue:
                 continue
             return (singer, their_queue.pop(0))
         return None
+
+dj = DJ()
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("Welcome to the Karaoke Bot! Send a YouTube link to request a song.")
@@ -70,13 +87,7 @@ async def request_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     youtube_link = update.message.text
 
     if is_valid_youtube_link(youtube_link):
-        if user.username not in user_song_lists:
-            user_song_lists[user.username] = []
-        user_song_lists[user.username].append(youtube_link)
-
-        if user.username not in queue:
-            queue.append(user.username)
-
+        dj.enqueue(update.message.chat_id, format_name(user), youtube_link)
         await update.message.reply_text("Your song request has been added to your list.")
     else:
         await update.message.reply_text("Invalid YouTube link. Please try again.")
@@ -90,52 +101,24 @@ async def next(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Only the admin can use this command.")
         return
 
-    if queue:
-        username = queue.pop(0)
-        if username in user_song_lists and user_song_lists[username]:
-            youtube_link = user_song_lists[username].pop(0)
-            await update.message.reply_text(f"Next singer: @{username} - {youtube_link}")
-            if user_song_lists[username]:
-                queue.append(username)
-            else:
-                await update.message.reply_text(f"@{username} has no more songs in their list.")
-        else:
-            await update.message.reply_text(f"@{username} has no songs in their list. Skipping to the next singer.")
-            await next(update, context)
-    else:
-        await update.message.reply_text("The queue is currently empty.")
-
-async def move(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not is_admin(update.message.from_user.username):
-        await update.message.reply_text("Only the admin can use this command.")
-        return
-
-    if queue:
-        username = queue.pop(0)
-        queue.append(username)
-        await update.message.reply_text(f"Singer @{username} has been moved to the end of the queue.")
-    else:
-        await update.message.reply_text("The queue is currently empty.")
+    await update.message.reply_text(dj.next())
 
 async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not is_admin(update.message.from_user.username):
         await update.message.reply_text("Only the admin can use this command.")
         return
 
-    if queue:
-        username = queue.pop(0)
-        await update.message.reply_text(f"Singer @{username} has been removed from the queue.")
-    else:
-        await update.message.reply_text("The queue is currently empty.")
+    msg = dj.remove()
+    await update.message.reply_text(msg)
 
 async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user = update.message.from_user
-    if user.username in user_song_lists:
-        user_song_lists[user.username].clear()
-        await update.message.reply_text("Your song list has been cleared.")
-    else:
-        await update.message.reply_text("You have no songs in your list.")
+    msg = dj.clear(update.message.chat_id)
+    await update.message.reply_text(msg)
 
+def format_name(user):
+    if user.username:
+        return '@' + user.username
+    return f'{user.first_name} {user.last_name}'
 
 async def list_songs(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.message.from_user
@@ -161,7 +144,6 @@ def main() -> None:
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, request_song))
     application.add_handler(CommandHandler("next", next))
-    application.add_handler(CommandHandler("move", move))
     application.add_handler(CommandHandler("remove", remove))
     application.add_handler(CommandHandler("clear", clear))
     application.add_handler(CommandHandler("list", list_songs))
