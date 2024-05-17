@@ -45,16 +45,15 @@ class DJ:
         return "You don't have any songs in your list"
 
     def remove(self) -> str:
-        match self.current:
-            case user, _:
-                if user in self.queue:
-                    self.queue.remove(user)
-                    if self.user_song_lists.get(user):
-                        del self.user_song_lists[user]
-                    return f"{self._name(user)} removed from the queue"
-                return f"{self._name(user)} was not on the queue :-o"
-            case None:
-                return "No current singer"
+        if self.current is None:
+            return "No current singer"
+        user, _ = self.current
+        if user in self.queue:
+            self.queue.remove(user)
+            if self.user_song_lists.get(user):
+                del self.user_song_lists[user]
+            return f"{self._name(user)} removed from the queue"
+        return f"{self._name(user)} was not on the queue :-o"
 
     def show_queue(self, user: int) -> str:
         their_queue = self.user_song_lists.get(user, [])
@@ -81,13 +80,13 @@ class DJ:
 
     def next(self) -> str:
         self.replacement_position = 0
-        match self.get_ready_singer():
-            case None:
-                return "The queue is empty"
-            case singer, song:
-                self.queue.append(singer)
-                self.current = (singer, song)
-                return f"Next up: {song} (by {self._name(singer)})\nCommands: /next /listall /remove"
+        ready = self.get_ready_singer()
+        if ready is None:
+            return "The queue is empty"
+        singer, song = ready
+        self.queue.append(singer)
+        self.current = (singer, song)
+        return f"Next up: {song} (by {self._name(singer)})\nCommands: /next /listall /remove"
 
     def pop_next_singer(self) -> int | None:
         if self.new_users:
