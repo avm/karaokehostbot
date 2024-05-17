@@ -18,6 +18,7 @@ load_dotenv()
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
+logging.getLogger("httpx").setLevel(logging.WARN)
 logger = logging.getLogger(__name__)
 
 # Telegram Bot API token
