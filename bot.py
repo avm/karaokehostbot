@@ -29,9 +29,6 @@ TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 ADMIN_USERNAMES = os.environ.get("ADMIN_USERNAMES", "").split(",")
 
 
-dj = DJ(shelve.open("bot"))
-
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "\n".join(
@@ -48,43 +45,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-async def request_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user = update.message.from_user
-    song = update.message.text
-
-    if is_url(song):
-        dj.enqueue(update.message.chat_id, format_name(user), song)
-        await update.message.reply_text(
-            "Your song request has been added to your list."
-        )
-    else:
-        await update.message.reply_text("Invalid YouTube link. Please try again.")
-
-
 def is_url(text: str) -> bool:
     return text.startswith("https://")
-
-
-async def next(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not is_admin(update.message.from_user.username):
-        await update.message.reply_text("Only the admin can use this command.")
-        return
-
-    await update.message.reply_text(dj.next())
-
-
-async def remove(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not is_admin(update.message.from_user.username):
-        await update.message.reply_text("Only the admin can use this command.")
-        return
-
-    msg = dj.remove()
-    await update.message.reply_text(msg)
-
-
-async def clear(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    msg = dj.clear(update.message.chat_id)
-    await update.message.reply_text(msg)
 
 
 def format_name(user):
@@ -93,19 +55,59 @@ def format_name(user):
     return f"{user.first_name} {user.last_name}"
 
 
-async def list_songs(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user = update.message.chat_id
-    msg = dj.show_queue(user)
-    await update.message.reply_text(msg)
+class KaraokeBot:
+    def __init__(self, db: shelve.Shelf, admins: list[str]):
+        self.dj = DJ(db)
+        self.admins = set(admins)
 
+    async def request_song(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        user = update.message.from_user
+        song = update.message.text
 
-async def list_all_queues(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    msg = dj.show_all_queues()
-    await update.message.reply_text(msg)
+        if is_url(song):
+            self.dj.enqueue(update.message.chat_id, format_name(user), song)
+            await update.message.reply_text(
+                "Your song request has been added to your list."
+            )
+        else:
+            await update.message.reply_text("Invalid YouTube link. Please try again.")
 
+    async def next(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if not self.is_admin(update.message.from_user.username):
+            await update.message.reply_text("Only the admin can use this command.")
+            return
 
-def is_admin(username: str) -> bool:
-    return username in ADMIN_USERNAMES
+        await update.message.reply_text(self.dj.next())
+
+    async def remove(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        if not self.is_admin(update.message.from_user.username):
+            await update.message.reply_text("Only the admin can use this command.")
+            return
+
+        msg = self.dj.remove()
+        await update.message.reply_text(msg)
+
+    async def clear(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        msg = self.dj.clear(update.message.chat_id)
+        await update.message.reply_text(msg)
+
+    async def list_songs(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        user = update.message.chat_id
+        msg = self.dj.show_queue(user)
+        await update.message.reply_text(msg)
+
+    async def list_all_queues(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        msg = self.dj.show_all_queues()
+        await update.message.reply_text(msg)
+
+    def is_admin(self, username: str) -> bool:
+        return username in self.admins
 
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -114,17 +116,18 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> N
 
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
+    bot = KaraokeBot(shelve.open("bot"), ADMIN_USERNAMES)
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", start))
     application.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, request_song)
+        MessageHandler(filters.TEXT & ~filters.COMMAND, bot.request_song)
     )
-    application.add_handler(CommandHandler("next", next))
-    application.add_handler(CommandHandler("remove", remove))
-    application.add_handler(CommandHandler("clear", clear))
-    application.add_handler(CommandHandler("list", list_songs))
-    application.add_handler(CommandHandler("listall", list_all_queues))
+    application.add_handler(CommandHandler("next", bot.next))
+    application.add_handler(CommandHandler("remove", bot.remove))
+    application.add_handler(CommandHandler("clear", bot.clear))
+    application.add_handler(CommandHandler("list", bot.list_songs))
+    application.add_handler(CommandHandler("listall", bot.list_all_queues))
 
     application.add_error_handler(error_handler)
 
