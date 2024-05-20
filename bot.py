@@ -1,5 +1,4 @@
 import os
-import re
 import logging
 import shelve
 from telegram import Update
@@ -51,10 +50,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def request_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.message.from_user
-    youtube_link = update.message.text
+    song = update.message.text
 
-    if is_valid_youtube_link(youtube_link):
-        dj.enqueue(update.message.chat_id, format_name(user), youtube_link)
+    if is_url(song):
+        dj.enqueue(update.message.chat_id, format_name(user), song)
         await update.message.reply_text(
             "Your song request has been added to your list."
         )
@@ -62,9 +61,8 @@ async def request_song(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         await update.message.reply_text("Invalid YouTube link. Please try again.")
 
 
-def is_valid_youtube_link(link: str) -> bool:
-    youtube_regex = r"(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(?:embed\/)?(?:v\/)?(?:shorts\/)?(?:\S+)"
-    return re.match(youtube_regex, link) is not None
+def is_url(text: str) -> bool:
+    return text.startswith("https://")
 
 
 async def next(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
