@@ -1,3 +1,6 @@
+from collections import defaultdict
+
+
 class DJ:
     def __init__(self, db):
         self.db = db
@@ -16,20 +19,21 @@ class DJ:
         self.db["paused"] = self.paused
 
     def load_song_lists(self):
-        return {user: self.load_song_list(user) for user in self.queue + self.new_users}
+        loaded = {user: self.load_song_list(user) for user in self._known_users()}
+        return defaultdict(list, loaded)
 
     def _song_list_key(self, user: int) -> str:
         return f"user:{user}"
 
-    def load_song_list(self, user: int) -> list[str] | None:
-        return self.db.get(self._song_list_key(user))
+    def load_song_list(self, user: int) -> list[str]:
+        return self.db.get(self._song_list_key(user), [])
 
     def save_song_list(self, user: int) -> None:
         queue = self.user_song_lists.get(user)
         key = self._song_list_key(user)
-        if queue is None and key in self.db:
+        if (not queue) and key in self.db:
             del self.db[key]
-        elif queue is not None:
+        elif queue:
             self.db[key] = queue
 
     def _name(self, chat_id: int) -> str:
@@ -63,7 +67,7 @@ class DJ:
         messages.append((None, self.next()))
         return messages
 
-    def pause(self, user) -> str:
+    def pause(self, user: int) -> str:
         if user in self.paused:
             return "You are already paused"
         self.paused.add(user)
@@ -80,8 +84,7 @@ class DJ:
         return "OK, you are now unpaused"
 
     def _unget_song(self, user: int, song: str) -> None:
-        their_queue = self.user_song_lists.get(user, [])
-        self.user_song_lists[user] = [song] + their_queue
+        self.user_song_lists[user].insert(0, song)
         self.save_song_list(user)
 
     def remove(self) -> str:
@@ -98,7 +101,7 @@ class DJ:
         return f"{self._name(user)} was not on the queue :-o"
 
     def show_queue(self, user: int) -> str:
-        their_queue = self.user_song_lists.get(user, [])
+        their_queue = self.user_song_lists.get(user)
         return f"{self._name(user)}:\n" + (
             "\n".join(their_queue) if their_queue else "(queue empty)"
         )
@@ -120,14 +123,15 @@ class DJ:
     def register(self, user: int, name: str) -> None:
         self.names[user] = name
 
+    def _known_users(self) -> set[int]:
+        return self.paused.union(self.new_users).union(self.queue)
+
     def enqueue(self, user: int, link: str) -> list[str]:
-        if user in self.user_song_lists:
-            self.user_song_lists[user].append(link)
-        else:
-            self.user_song_lists[user] = [link]
+        self.user_song_lists[user].append(link)
+        self.save_song_list(user)
+        if user not in self._known_users():
             self.new_users.append(user)
             self.save_global()
-        self.save_song_list(user)
 
     def next(self) -> str:
         ready = self._get_ready_singer()

@@ -44,7 +44,7 @@ def test_storage():
     assert db["new_users"] == [1]
     assert db["queue"] == [2]
     assert db["user:1"] == ["Doors"]
-    assert db["user:2"] == []
+    assert "user:2" not in db
     dj.remove()
     assert db["queue"] == []
     assert "user:2" not in db
@@ -81,7 +81,7 @@ def test_reload():
     assert db["new_users"] == [1]
     assert db["queue"] == [2]
     assert db["user:1"] == ["Doors"]
-    assert db["user:2"] == []
+    assert "user:2" not in db
 
     dj = DJ(db)
 

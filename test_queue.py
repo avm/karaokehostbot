@@ -138,3 +138,13 @@ def test_listall():
             "Paused users: alice",
         )
     )
+
+
+def test_pause_enqueue():
+    dj = DJ({})
+    dj.pause(1)
+    dj.enqueue(1, "01")
+    dj.enqueue(1, "03")
+    assert dj.next() == "The queue is empty"
+    dj.unpause(1)
+    assert dj.next() == format_next("1", "01")
