@@ -101,3 +101,23 @@ def test_pause():
     assert dj.next() == format_next("guest1", "03")
     assert dj.next() == format_next("avm", "Elvis")
     assert dj.next() == "The queue is empty"
+
+
+def test_listall():
+    dj = DJ({})
+    dj.enqueue(1, "avm", "01")
+    dj.enqueue(1, "avm", "03")
+    dj.enqueue(2, "alice", "02")
+    dj.enqueue(2, "alice", "04")
+    dj.enqueue(3, "avi", "AA")
+    dj.enqueue(3, "avi", "BB")
+    dj.pause(2)
+    assert dj.show_all_queues() == "\n\n".join(
+        (
+            "All queues:",
+            "avm:\n01\n03",
+            "alice:\n02\n04",
+            "avi:\nAA\nBB",
+            "Paused users: alice",
+        )
+    )

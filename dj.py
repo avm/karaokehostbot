@@ -104,9 +104,18 @@ class DJ:
         )
 
     def show_all_queues(self) -> str:
-        return "All queues:\n\n" + "\n\n".join(
-            self.show_queue(u) for u in self.new_users + self.queue
+        all_queues = self.new_users + self.queue
+        queues_str = (
+            ("All queues:\n\n" + "\n\n".join(self.show_queue(u) for u in all_queues))
+            if all_queues
+            else "No active queues."
         )
+        paused_str = (
+            "Paused users: " + ", ".join(self._name(user) for user in self.paused)
+            if self.paused
+            else "No paused users."
+        )
+        return f"{queues_str}\n\n{paused_str}"
 
     def enqueue(self, user: int, name: str, link: str) -> list[str]:
         self.names[user] = name
