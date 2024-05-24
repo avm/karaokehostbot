@@ -2,7 +2,7 @@ from dj import DJ
 
 
 def format_next(name, song):
-    return f"Next up: {song} (by {name})\nCommands: /next /listall /remove"
+    return f"Next up: {song} (by {name})\nCommands: /next /listall /remove /notready"
 
 
 def test_queue():
