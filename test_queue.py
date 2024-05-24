@@ -68,3 +68,36 @@ def test_remove():
     dj.enqueue(1, "avm", "Elvis")
     assert dj.next() == format_next("avm", "Elvis")
     assert dj.next() == format_next("alice", "05")
+
+
+def test_pause():
+    dj = DJ({})
+    dj.enqueue(1, "avm", "01")
+    dj.enqueue(1, "avm", "03")
+    dj.enqueue(2, "alice", "02")
+    dj.enqueue(2, "alice", "04")
+    assert dj.next() == format_next("avm", "01")
+    assert dj.next() == format_next("alice", "02")
+    assert dj.next() == format_next("avm", "03")
+    dj.enqueue(3, "guest1", "01")
+    dj.enqueue(3, "guest1", "02")
+    assert dj.notready() == [
+        (
+            1,
+            "You were paused because you missed your turn. "
+            "Use /unpause when you are ready!",
+        ),
+        (None, "avm was paused"),
+        (None, format_next("guest1", "01")),
+    ]
+    dj.enqueue(3, "guest1", "03")
+    dj.enqueue(4, "guest2", "04")
+    assert dj.next() == format_next("guest2", "04")
+    assert dj.next() == format_next("alice", "04")
+    dj.enqueue(1, "avm", "Elvis")
+    assert dj.next() == format_next("guest1", "02")
+    assert dj.unpause(1) == "OK, you are now unpaused"
+    assert dj.next() == format_next("avm", "03")
+    assert dj.next() == format_next("guest1", "03")
+    assert dj.next() == format_next("avm", "Elvis")
+    assert dj.next() == "The queue is empty"

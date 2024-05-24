@@ -40,6 +40,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 "/clear — clear your queue",
                 "Admin only:",
                 "/next — show next song to be performed",
+                "/notready — pause current singer and move on",
             )
         )
     )
@@ -80,6 +81,18 @@ class KaraokeBot:
             return
 
         await update.message.reply_text(self.dj.next())
+
+    async def notready(
+        self, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        if not self.is_admin(update.message.from_user.username):
+            await update.message.reply_text("Only the admin can use this command.")
+            return
+        msgs = self.dj.notready()
+        for chat_id, text in msgs:
+            if chat_id is None:
+                chat_id = update.effective_message.chat_id
+            await update.get_bot().send_message(chat_id, text)
 
     async def remove(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not self.is_admin(update.message.from_user.username):
@@ -125,6 +138,7 @@ def main() -> None:
     )
     application.add_handler(CommandHandler("next", bot.next))
     application.add_handler(CommandHandler("remove", bot.remove))
+    application.add_handler(CommandHandler("notready", bot.notready))
     application.add_handler(CommandHandler("clear", bot.clear))
     application.add_handler(CommandHandler("list", bot.list_songs))
     application.add_handler(CommandHandler("listall", bot.list_all_queues))

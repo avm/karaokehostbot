@@ -17,7 +17,6 @@ async def test_request():
         text="https://my.favorite.site/song1",
     )
     tgbot = AsyncMock()
-    tgbot.send_message = AsyncMock()
 
     message.set_bot(tgbot)
     update = Update(update_id=200, message=message)
