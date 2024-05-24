@@ -117,8 +117,10 @@ class DJ:
         )
         return f"{queues_str}\n\n{paused_str}"
 
-    def enqueue(self, user: int, name: str, link: str) -> list[str]:
+    def register(self, user: int, name: str) -> None:
         self.names[user] = name
+
+    def enqueue(self, user: int, link: str) -> list[str]:
         if user in self.user_song_lists:
             self.user_song_lists[user].append(link)
         else:

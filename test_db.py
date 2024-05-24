@@ -25,21 +25,23 @@ class CopyingDict:
 def test_storage():
     db = CopyingDict()
     dj = DJ(db)
-    dj.enqueue(1, "avm", "Elvis")
+    dj.register(1, "avm")
+    dj.enqueue(1, "Elvis")
     print(db.data)
     assert db["user:1"] == ["Elvis"]
     assert db["new_users"] == [1]
     assert db["names"] == {1: "avm"}
-    dj.enqueue(2, "alice", "Amanda Palmer")
+    dj.enqueue(2, "Amanda Palmer")
     dj.next()  # Elvis
     assert db["queue"] == [1]
     dj.next()  # Amanda Palmer
     assert db["queue"] == [1, 2]
     assert db["new_users"] == []
-    dj.enqueue(2, "alice", "Nickelback")
+    dj.register(2, "alice")
+    dj.enqueue(2, "Nickelback")
     dj.next()  # Nickelback
     assert db["queue"] == [2]
-    dj.enqueue(1, "avm", "Doors")
+    dj.enqueue(1, "Doors")
     assert db["new_users"] == [1]
     assert db["queue"] == [2]
     assert db["user:1"] == ["Doors"]

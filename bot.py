@@ -1,7 +1,7 @@
 import os
 import logging
 import shelve
-from telegram import Update
+from telegram import Update, User
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -53,7 +53,7 @@ def is_url(text: str) -> bool:
     return text.startswith("https://")
 
 
-def format_name(user):
+def format_name(user: User) -> str:
     if user.username:
         return "@" + user.username
     return f"{user.first_name} {user.last_name}"
@@ -64,14 +64,18 @@ class KaraokeBot:
         self.dj = DJ(db)
         self.admins = set(admins)
 
+    def _register(self, user: User) -> None:
+        self.dj.register(user.id, format_name(user))
+
     async def request_song(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
         user = update.message.from_user
+        self._register(user)
         song = update.message.text
 
         if is_url(song):
-            self.dj.enqueue(update.message.chat_id, format_name(user), song)
+            self.dj.enqueue(user.id, song)
             await update.message.reply_text(
                 "Your song request has been added to your list."
             )
@@ -106,23 +110,27 @@ class KaraokeBot:
         await update.message.reply_text(msg)
 
     async def clear(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        self._register(update.message.from_user)
         msg = self.dj.clear(update.message.chat_id)
         await update.message.reply_text(msg)
 
     async def list_songs(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
-        user = update.message.chat_id
-        msg = self.dj.show_queue(user)
+        user = update.message.from_user
+        self._register(user)
+        msg = self.dj.show_queue(user.id)
         await update.message.reply_text(msg)
 
     async def pause(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        user = update.message.from_user.id
-        await update.message.reply_text(self.dj.pause(user))
+        user = update.message.from_user
+        self._register(user)
+        await update.message.reply_text(self.dj.pause(user.id))
 
     async def unpause(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        user = update.message.from_user.id
-        await update.message.reply_text(self.dj.unpause(user))
+        user = update.message.from_user
+        self._register(user)
+        await update.message.reply_text(self.dj.unpause(user.id))
 
     async def list_all_queues(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
