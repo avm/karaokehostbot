@@ -38,8 +38,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
                 "/list — show your queue",
                 "/listall — show all queues",
                 "/clear — clear your queue",
+                "/pause — take a break from singing",
+                "/unpause — continue singing",
                 "Admin only:",
                 "/next — show next song to be performed",
+                "/remove — remove current singer because they have left"
                 "/notready — pause current singer and move on",
             )
         )
@@ -113,6 +116,14 @@ class KaraokeBot:
         msg = self.dj.show_queue(user)
         await update.message.reply_text(msg)
 
+    async def pause(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        user = update.message.from_user.id
+        await update.message.reply_text(self.dj.pause(user))
+
+    async def unpause(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        user = update.message.from_user.id
+        await update.message.reply_text(self.dj.unpause(user))
+
     async def list_all_queues(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
@@ -136,12 +147,15 @@ def main() -> None:
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, bot.request_song)
     )
+
     application.add_handler(CommandHandler("next", bot.next))
     application.add_handler(CommandHandler("remove", bot.remove))
     application.add_handler(CommandHandler("notready", bot.notready))
     application.add_handler(CommandHandler("clear", bot.clear))
     application.add_handler(CommandHandler("list", bot.list_songs))
     application.add_handler(CommandHandler("listall", bot.list_all_queues))
+    application.add_handler(CommandHandler("pause", bot.pause))
+    application.add_handler(CommandHandler("unpause", bot.unpause))
 
     application.add_error_handler(error_handler)
 
