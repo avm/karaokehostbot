@@ -32,7 +32,7 @@ class VideoFormatter:
 
     def tg_format(self, url: str) -> str:
         if title := self.get_title(url):
-            return f"[{title}]({url})"
+            return f"{title} {url}"
         return url
 
     @staticmethod
