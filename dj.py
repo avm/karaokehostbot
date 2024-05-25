@@ -109,11 +109,10 @@ class DJ:
 
     def show_queue(self, user: int) -> str:
         their_queue = self.user_song_lists.get(user)
+        user_str = f"{self._name(user)}:\n"
         if not their_queue:
-            return "(queue empty)"
-        return f"{self._name(user)}:\n" + "\n".join(
-            self._format_song(song) for song in their_queue
-        )
+            return user_str + "(queue empty)"
+        return user_str + "\n".join(self._format_song(song) for song in their_queue)
 
     def show_all_queues(self) -> str:
         all_queues = self.new_users + self.queue

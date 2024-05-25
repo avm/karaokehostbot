@@ -128,12 +128,13 @@ def test_listall():
     dj.enqueue(2, "04")
     dj.enqueue(3, "AA")
     dj.enqueue(3, "BB")
+    dj.clear(2)
     dj.pause(2)
     assert dj.show_all_queues() == "\n\n".join(
         (
             "All queues:",
             "avm:\n01\n03",
-            "alice:\n02\n04",
+            "alice:\n(queue empty)",
             "avi:\nAA\nBB",
             "Paused users: alice",
         )
