@@ -1,9 +1,11 @@
 from collections import defaultdict
+from youtube import VideoFormatter
 
 
 class DJ:
-    def __init__(self, db):
+    def __init__(self, db, formatter: VideoFormatter | None = None):
         self.db = db
+        self.formatter = formatter
         self.names: dict[int, str] = self.db.get("names", {})
         self.queue: list[str] = self.db.get("queue", [])
         self.new_users: list[str] = self.db.get("new_users", [])
@@ -100,10 +102,17 @@ class DJ:
             return f"{self._name(user)} removed from the queue"
         return f"{self._name(user)} was not on the queue :-o"
 
+    def _format_song(self, song: str) -> str:
+        if self.formatter:
+            return self.formatter.tg_format(song)
+        return song
+
     def show_queue(self, user: int) -> str:
         their_queue = self.user_song_lists.get(user)
-        return f"{self._name(user)}:\n" + (
-            "\n".join(their_queue) if their_queue else "(queue empty)"
+        if not their_queue:
+            return "(queue empty)"
+        return f"{self._name(user)}:\n" + "\n".join(
+            self._format_song(song) for song in their_queue
         )
 
     def show_all_queues(self) -> str:
@@ -125,6 +134,11 @@ class DJ:
 
     def _known_users(self) -> set[int]:
         return self.paused.union(self.new_users).union(self.queue)
+
+    async def enqueue2(self, user: int, link: str) -> list[str]:
+        if self.formatter:
+            await self.formatter.register_url(link)
+        return self.enqueue(user, link)
 
     def enqueue(self, user: int, link: str) -> list[str]:
         self.user_song_lists[user].append(link)

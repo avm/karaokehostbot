@@ -12,6 +12,7 @@ from telegram.ext import (
 from dotenv import load_dotenv
 
 from dj import DJ
+from youtube import VideoFormatter
 
 load_dotenv()
 
@@ -24,6 +25,8 @@ logger = logging.getLogger(__name__)
 
 # Telegram Bot API token
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+
+YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 
 # Admin user configuration
 ADMIN_USERNAMES = os.environ.get("ADMIN_USERNAMES", "").split(",")
@@ -61,7 +64,8 @@ def format_name(user: User) -> str:
 
 class KaraokeBot:
     def __init__(self, db: shelve.Shelf, admins: list[str]):
-        self.dj = DJ(db)
+        formatter = VideoFormatter(YOUTUBE_API_KEY, db)
+        self.dj = DJ(db, formatter)
         self.admins = set(admins)
 
     def _register(self, user: User) -> None:
@@ -75,7 +79,7 @@ class KaraokeBot:
         song = update.message.text
 
         if is_url(song):
-            self.dj.enqueue(user.id, song)
+            await self.dj.enqueue2(user.id, song)
             await update.message.reply_text(
                 "Your song request has been added to your list."
             )
