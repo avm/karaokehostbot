@@ -1,5 +1,4 @@
-import asyncio
-import niquests
+import httpx
 from urllib.parse import urlparse, parse_qs
 
 
@@ -22,7 +21,7 @@ class VideoFormatter:
     def __init__(self, yt_api_key: str, db={}):
         self.db = db
         self.yt_api_key = yt_api_key
-        self.http = niquests.AsyncSession()
+        self.http = httpx.AsyncClient()
 
     def get_title(self, url: str):
         if not (yt_id := extract_youtube_id(url)):
