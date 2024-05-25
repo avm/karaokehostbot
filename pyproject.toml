@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "kara0ke-party-bot"
+version = "0.1.0"
+description = "Telegram bot to maintain a karaoke queue"
+authors = ["Alexander Myltsev <a.myltsev@gmail.com>"]
+license = "Public domain"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+python-telegram-bot = "^21.1"
+python-dotenv = "^1.0.1"
+httpx = "^0.27.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest-asyncio = "^0.23.7"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
