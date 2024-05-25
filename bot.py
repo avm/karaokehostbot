@@ -64,8 +64,10 @@ def format_name(user: User) -> str:
 
 class KaraokeBot:
     def __init__(self, db: shelve.Shelf, admins: list[str]):
-        formatter = VideoFormatter(YOUTUBE_API_KEY, db)
-        self.dj = DJ(db, formatter)
+        self.formatter = (
+            VideoFormatter(YOUTUBE_API_KEY, db) if YOUTUBE_API_KEY else None
+        )
+        self.dj = DJ(db, self.formatter)
         self.admins = set(admins)
 
     def _register(self, user: User) -> None:
@@ -79,12 +81,14 @@ class KaraokeBot:
         song = update.message.text
 
         if is_url(song):
-            await self.dj.enqueue2(user.id, song)
+            self.dj.enqueue(user.id, song)
             await update.message.reply_text(
                 "Your song request has been added to your list."
             )
+            if self.formatter:
+                await self.formatter.register_url(song)
         else:
-            await update.message.reply_text("Invalid YouTube link. Please try again.")
+            await update.message.reply_text("Invalid link. Please try again.")
 
     async def next(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not self.is_admin(update.message.from_user.username):

@@ -22,7 +22,6 @@ class VideoFormatter:
     def __init__(self, yt_api_key: str, db={}):
         self.db = db
         self.yt_api_key = yt_api_key
-        self.tasks = set()
         self.http = niquests.AsyncSession()
 
     def get_title(self, url: str):
@@ -60,6 +59,4 @@ class VideoFormatter:
             return
         if self._db_key(yt_id) in self.db:
             return
-        task = asyncio.create_task(self._fetch_details(yt_id))
-        self.tasks.add(task)
-        task.add_done_callback(self.tasks.discard)
+        await self._fetch_details(yt_id)

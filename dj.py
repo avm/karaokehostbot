@@ -134,11 +134,6 @@ class DJ:
     def _known_users(self) -> set[int]:
         return self.paused.union(self.new_users).union(self.queue)
 
-    async def enqueue2(self, user: int, link: str) -> list[str]:
-        if self.formatter:
-            await self.formatter.register_url(link)
-        return self.enqueue(user, link)
-
     def enqueue(self, user: int, link: str) -> list[str]:
         self.user_song_lists[user].append(link)
         self.save_song_list(user)
