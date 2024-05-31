@@ -162,7 +162,7 @@ class DJ:
         self.queue.append(singer)
         self.current = (singer, song)
         self.save_global()
-        return f"Next up: {song} (by {self._name(singer)})\nCommands: /next /listall /remove /notready"
+        return f"Next up: {self._format_song(song)} (by {self._name(singer)})\nCommands: /next /listall /remove /notready"
 
     def _pop_next_singer(self) -> int | None:
         if self.new_users:
