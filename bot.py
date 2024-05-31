@@ -143,7 +143,7 @@ class KaraokeBot:
     async def list_all_queues(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
-        msg = self.dj.show_all_queues()
+        msg = self.dj.show_all_queues(requester=update.message.chat.id)
         await update.message.reply_text(msg)
 
     def is_admin(self, username: str) -> bool:

@@ -133,7 +133,16 @@ def test_listall():
     assert dj.show_all_queues() == "\n\n".join(
         (
             "All queues:",
-            "avm:\n01\n03",
+            "avm:\n(2 songs)",
+            "alice:\n(queue empty)",
+            "avi:\n(2 songs)",
+            "Paused users: alice",
+        )
+    )
+    assert dj.show_all_queues(requester=3) == "\n\n".join(
+        (
+            "All queues:",
+            "avm:\n(2 songs)",
             "alice:\n(queue empty)",
             "avi:\nAA\nBB",
             "Paused users: alice",

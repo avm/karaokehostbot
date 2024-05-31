@@ -1,5 +1,6 @@
 from collections import defaultdict
 from youtube import VideoFormatter
+from gettext import ngettext
 
 
 class DJ:
@@ -107,17 +108,20 @@ class DJ:
             return self.formatter.tg_format(song)
         return song
 
-    def show_queue(self, user: int) -> str:
+    def show_queue(self, user: int, requester: int | None = None) -> str:
         their_queue = self.user_song_lists.get(user)
         user_str = f"{self._name(user)}:\n"
         if not their_queue:
             return user_str + "(queue empty)"
+        if user != requester:
+            n = len(their_queue)
+            return user_str + ngettext("(%d song)", "(%d songs)", n) % n
         return user_str + "\n".join(self._format_song(song) for song in their_queue)
 
-    def show_all_queues(self) -> str:
+    def show_all_queues(self, requester: int | None = None) -> str:
         all_queues = self.new_users + self.queue
         queues_str = (
-            ("All queues:\n\n" + "\n\n".join(self.show_queue(u) for u in all_queues))
+            ("All queues:\n\n" + "\n\n".join(self.show_queue(u, requester) for u in all_queues))
             if all_queues
             else "No active queues."
         )
