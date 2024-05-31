@@ -127,7 +127,7 @@ class KaraokeBot:
     ) -> None:
         user = update.message.from_user
         self._register(user)
-        msg = self.dj.show_queue(user.id)
+        msg = self.dj.show_queue(user.id, update.message.chat.id)
         await update.message.reply_text(msg)
 
     async def pause(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
