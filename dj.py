@@ -1,6 +1,7 @@
 from collections import defaultdict
 from youtube import VideoFormatter
 from gettext import ngettext
+from telegram.helpers import escape_markdown
 
 
 class DJ:
@@ -110,12 +111,12 @@ class DJ:
 
     def show_queue(self, user: int, show_songs: bool = False) -> str:
         their_queue = self.user_song_lists.get(user)
-        user_str = f"{self._name(user)}:\n"
+        user_str = escape_markdown(f"{self._name(user)}:\n", version=2)
         if not their_queue:
-            return user_str + "(queue empty)"
+            return user_str + r"\(queue empty\)"
         if not show_songs:
             n = len(their_queue)
-            return user_str + ngettext("(%d song)", "(%d songs)", n) % n
+            return user_str + ngettext(r"\(%d song\)", r"\(%d songs\)", n) % n
         return user_str + "\n".join(self._format_song(song) for song in their_queue)
 
     def show_all_queues(
@@ -131,12 +132,12 @@ class DJ:
                 )
             )
             if all_queues
-            else "No active queues."
+            else "No active queues"
         )
         paused_str = (
             "Paused users: " + ", ".join(self._name(user) for user in self.paused)
             if self.paused
-            else "No paused users."
+            else "No paused users"
         )
         return f"{queues_str}\n\n{paused_str}"
 
@@ -162,7 +163,7 @@ class DJ:
         self.queue.append(singer)
         self.current = (singer, song)
         self.save_global()
-        return f"Next up: {self._format_song(song)} (by {self._name(singer)})\nCommands: /next /listall /remove /notready"
+        return f"Next up: {self._format_song(song)} \\(by {escape_markdown(self._name(singer))}\\)\nCommands: /next /listall /remove /notready"
 
     def _pop_next_singer(self) -> int | None:
         if self.new_users:

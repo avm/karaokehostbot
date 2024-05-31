@@ -2,7 +2,9 @@ from dj import DJ
 
 
 def format_next(name, song):
-    return f"Next up: {song} (by {name})\nCommands: /next /listall /remove /notready"
+    return (
+        f"Next up: {song} \\(by {name}\\)\nCommands: /next /listall /remove /notready"
+    )
 
 
 def test_queue():
@@ -121,7 +123,7 @@ def test_listall():
     dj = DJ({})
     dj.register(1, "avm")
     dj.register(2, "alice")
-    dj.register(3, "avi")
+    dj.register(3, "@avi_avi")
     dj.enqueue(1, "01")
     dj.enqueue(1, "03")
     dj.enqueue(2, "02")
@@ -133,18 +135,18 @@ def test_listall():
     assert dj.show_all_queues() == "\n\n".join(
         (
             "All queues:",
-            "avm:\n(2 songs)",
-            "alice:\n(queue empty)",
-            "avi:\n(2 songs)",
+            "avm:\n\\(2 songs\\)",
+            "alice:\n\\(queue empty\\)",
+            "@avi\\_avi:\n\\(2 songs\\)",
             "Paused users: alice",
         )
     )
     assert dj.show_all_queues(requester=3) == "\n\n".join(
         (
             "All queues:",
-            "avm:\n(2 songs)",
-            "alice:\n(queue empty)",
-            "avi:\nAA\nBB",
+            "avm:\n\\(2 songs\\)",
+            "alice:\n\\(queue empty\\)",
+            "@avi\\_avi:\nAA\nBB",
             "Paused users: alice",
         )
     )
@@ -152,8 +154,8 @@ def test_listall():
         (
             "All queues:",
             "avm:\n01\n03",
-            "alice:\n(queue empty)",
-            "avi:\nAA\nBB",
+            "alice:\n\\(queue empty\\)",
+            "@avi\\_avi:\nAA\nBB",
             "Paused users: alice",
         )
     )

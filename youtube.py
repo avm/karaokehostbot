@@ -1,5 +1,6 @@
 import httpx
 from urllib.parse import urlparse, parse_qs
+from telegram.helpers import escape_markdown
 
 
 def extract_youtube_id(url: str) -> str | None:
@@ -30,7 +31,7 @@ class VideoFormatter:
 
     def tg_format(self, url: str) -> str:
         if title := self.get_title(url):
-            return f"{title} {url}"
+            return f"[{escape_markdown(title, version=2)}]({url})"
         return url
 
     @staticmethod

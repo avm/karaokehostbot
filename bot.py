@@ -10,6 +10,7 @@ from telegram.ext import (
     filters,
     ContextTypes,
 )
+from telegram.constants import ParseMode
 from dotenv import load_dotenv
 
 from dj import DJ
@@ -96,7 +97,9 @@ class KaraokeBot:
             await update.message.reply_text("Only the admin can use this command.")
             return
 
-        await update.message.reply_text(self.dj.next())
+        await update.message.reply_text(
+            self.dj.next(), parse_mode=ParseMode.MARKDOWN_V2
+        )
 
     async def notready(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
@@ -129,7 +132,7 @@ class KaraokeBot:
         user = update.message.from_user
         self._register(user)
         msg = self.dj.show_queue(user.id, (user.id == update.message.chat.id))
-        await update.message.reply_text(msg)
+        await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)
 
     async def pause(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         user = update.message.from_user
@@ -148,7 +151,7 @@ class KaraokeBot:
         msg = self.dj.show_all_queues(
             requester=update.message.chat.id, is_admin=is_admin
         )
-        await update.message.reply_text(msg)
+        await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)
 
     def is_admin(self, username: str) -> bool:
         return username in self.admins
