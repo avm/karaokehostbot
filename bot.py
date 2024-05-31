@@ -128,7 +128,7 @@ class KaraokeBot:
     ) -> None:
         user = update.message.from_user
         self._register(user)
-        msg = self.dj.show_queue(user.id, update.message.chat.id)
+        msg = self.dj.show_queue(user.id, (user.id == update.message.chat.id))
         await update.message.reply_text(msg)
 
     async def pause(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -144,7 +144,10 @@ class KaraokeBot:
     async def list_all_queues(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
-        msg = self.dj.show_all_queues(requester=update.message.chat.id)
+        is_admin = self.is_admin(update.message.from_user.username)
+        msg = self.dj.show_all_queues(
+            requester=update.message.chat.id, is_admin=is_admin
+        )
         await update.message.reply_text(msg)
 
     def is_admin(self, username: str) -> bool:

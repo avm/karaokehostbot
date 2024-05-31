@@ -108,22 +108,27 @@ class DJ:
             return self.formatter.tg_format(song)
         return song
 
-    def show_queue(self, user: int, requester: int | None = None) -> str:
+    def show_queue(self, user: int, show_songs: bool = False) -> str:
         their_queue = self.user_song_lists.get(user)
         user_str = f"{self._name(user)}:\n"
         if not their_queue:
             return user_str + "(queue empty)"
-        if user != requester:
+        if not show_songs:
             n = len(their_queue)
             return user_str + ngettext("(%d song)", "(%d songs)", n) % n
         return user_str + "\n".join(self._format_song(song) for song in their_queue)
 
-    def show_all_queues(self, requester: int | None = None) -> str:
+    def show_all_queues(
+        self, requester: int | None = None, is_admin: bool = False
+    ) -> str:
         all_queues = self.new_users + self.queue
         queues_str = (
             (
                 "All queues:\n\n"
-                + "\n\n".join(self.show_queue(u, requester) for u in all_queues)
+                + "\n\n".join(
+                    self.show_queue(u, (is_admin or (u == requester)))
+                    for u in all_queues
+                )
             )
             if all_queues
             else "No active queues."

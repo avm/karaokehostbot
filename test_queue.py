@@ -148,6 +148,15 @@ def test_listall():
             "Paused users: alice",
         )
     )
+    assert dj.show_all_queues(is_admin=True) == "\n\n".join(
+        (
+            "All queues:",
+            "avm:\n01\n03",
+            "alice:\n(queue empty)",
+            "avi:\nAA\nBB",
+            "Paused users: alice",
+        )
+    )
 
 
 def test_pause_enqueue():
