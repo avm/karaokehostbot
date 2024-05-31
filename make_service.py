@@ -10,7 +10,7 @@ def create_service(service_name, exec_start, working_directory):
 
     [Service]
     WorkingDirectory={working_directory}
-    ExecStart={exec_start}
+    ExecStart={os.path.join(working_directory, exec_start)}
     Restart=always
     RestartSec=10
 
@@ -36,7 +36,7 @@ def enable_service(service_name):
 
 if __name__ == "__main__":
     service_name = "kara0ke_party_bot"
-    exec_start = "./venv/bin/python3 bot.py"
+    exec_start = "bot.py"
     working_directory = os.path.dirname(os.path.abspath(__file__))
 
     service_file_path = create_service(service_name, exec_start, working_directory)
