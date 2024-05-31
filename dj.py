@@ -121,7 +121,10 @@ class DJ:
     def show_all_queues(self, requester: int | None = None) -> str:
         all_queues = self.new_users + self.queue
         queues_str = (
-            ("All queues:\n\n" + "\n\n".join(self.show_queue(u, requester) for u in all_queues))
+            (
+                "All queues:\n\n"
+                + "\n\n".join(self.show_queue(u, requester) for u in all_queues)
+            )
             if all_queues
             else "No active queues."
         )
