@@ -1,10 +1,14 @@
 from dj import DJ
 
 
-def format_next(name, song):
+def format_next(name, song, url=None):
     return (
-        f"Next up: {song} \\(by {name}\\)\nCommands: /next /listall /remove /notready"
+        f"Singer: {name}\n" f"Song: {song}",
+        url or song,
     )
+
+
+empty_queue = ("The queue is empty", None)
 
 
 def test_queue():
@@ -29,7 +33,7 @@ def test_queue():
     assert dj.next() == format_next("alice", "04")
     assert dj.next() == format_next("guest1", "02")
     assert dj.next() == format_next("guest1", "03")
-    assert dj.next() == "The queue is empty"
+    assert dj.next() == empty_queue
 
 
 def test_clear():
@@ -116,7 +120,7 @@ def test_pause():
     assert dj.next() == format_next("avm", "03")
     assert dj.next() == format_next("guest1", "03")
     assert dj.next() == format_next("avm", "Elvis")
-    assert dj.next() == "The queue is empty"
+    assert dj.next() == ("The queue is empty", None)
 
 
 def test_listall():
@@ -166,7 +170,7 @@ def test_pause_enqueue():
     dj.pause(1)
     dj.enqueue(1, "01")
     dj.enqueue(1, "03")
-    assert dj.next() == "The queue is empty"
+    assert dj.next() == ("The queue is empty", None)
     dj.unpause(1)
     assert dj.next() == format_next("1", "01")
 
@@ -183,5 +187,5 @@ def test_formatter():
     dj.register(2, "alice")
     dj.enqueue(1, "01")
     dj.enqueue(1, "03")
-    assert dj.next() == format_next("avm", "Baseballs — Umbrella")
+    assert dj.next() == format_next("avm", "Baseballs — Umbrella", "01")
     assert dj.next() == format_next("avm", "03")

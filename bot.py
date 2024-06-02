@@ -2,13 +2,15 @@
 import os
 import logging
 import shelve
-from telegram import Update, User
+from telegram import Update, User, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Application,
     CommandHandler,
+    CallbackQueryHandler,
     MessageHandler,
     filters,
     ContextTypes,
+    CallbackContext,
 )
 from telegram.constants import ParseMode
 from dotenv import load_dotenv
@@ -82,24 +84,54 @@ class KaraokeBot:
         self._register(user)
         song = update.message.text
 
-        if is_url(song):
-            self.dj.enqueue(user.id, song)
-            await update.message.reply_text(
-                "Your song request has been added to your list."
-            )
-            if self.formatter:
-                await self.formatter.register_url(song)
-        else:
+        if not is_url(song):
             await update.message.reply_text("Invalid link. Please try again.")
+            return
+
+        self.dj.enqueue(user.id, song)
+        await update.message.reply_text(
+            "Your song request has been added to your list."
+        )
+        if self.formatter:
+            await self.formatter.register_url(song)
 
     async def next(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         if not self.is_admin(update.message.from_user.username):
             await update.message.reply_text("Only the admin can use this command.")
             return
+        await self.next_impl(update)
 
-        await update.message.reply_text(
-            self.dj.next(), parse_mode=ParseMode.MARKDOWN_V2
+    async def next_impl(self, update: Update) -> None:
+        text, url = self.dj.next()
+        if url is None:
+            await update.effective_message.reply_text(text)
+            return
+
+        song_button = InlineKeyboardButton(text="▶️ Play song", url=url)
+        not_ready_button = InlineKeyboardButton(
+            text="⏳ Singer not ready", callback_data="not_ready"
         )
+        next_button = InlineKeyboardButton(text="⬇️ Next singer", callback_data="next")
+        inline_keyboard = InlineKeyboardMarkup(
+            [[song_button], [not_ready_button], [next_button]]
+        )
+
+        await update.effective_message.reply_text(
+            text,
+            parse_mode=ParseMode.MARKDOWN_V2,
+            reply_markup=inline_keyboard,
+            disable_web_page_preview=True,
+        )
+
+    async def button_callback(self, update: Update, context: CallbackContext) -> None:
+        await update.callback_query.answer()
+        match update.callback_query.data:
+            case "not_ready":
+                if self.is_admin(update.callback_query.from_user.username):
+                    await self.notready_impl(update)
+            case "next":
+                if self.is_admin(update.callback_query.from_user.username):
+                    await self.next_impl(update)
 
     async def notready(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
@@ -107,6 +139,9 @@ class KaraokeBot:
         if not self.is_admin(update.message.from_user.username):
             await update.message.reply_text("Only the admin can use this command.")
             return
+        await self.notready_impl(update)
+
+    async def notready_impl(self, update: Update) -> None:
         msgs = self.dj.notready()
         for chat_id, text in msgs:
             if chat_id is None:
@@ -151,14 +186,18 @@ class KaraokeBot:
         msg = self.dj.show_all_queues(
             requester=update.message.chat.id, is_admin=is_admin
         )
-        await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(
+            msg,
+            parse_mode=ParseMode.MARKDOWN_V2,
+            disable_web_page_preview=True,
+        )
 
     def is_admin(self, username: str) -> bool:
         return username in self.admins
 
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    logger.error(f"Exception while handling an update: {context.error}")
+    logger.error(f"Exception while handling an update ({update}): {context.error}")
 
 
 def main() -> None:
@@ -179,6 +218,8 @@ def main() -> None:
     application.add_handler(CommandHandler("listall", bot.list_all_queues))
     application.add_handler(CommandHandler("pause", bot.pause))
     application.add_handler(CommandHandler("unpause", bot.unpause))
+
+    application.add_handler(CallbackQueryHandler(bot.button_callback))
 
     application.add_error_handler(error_handler)
 

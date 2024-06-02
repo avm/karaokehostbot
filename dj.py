@@ -154,16 +154,20 @@ class DJ:
             self.new_users.append(user)
             self.save_global()
 
-    def next(self) -> str:
+    def next(self) -> tuple[str, str]:
         ready = self._get_ready_singer()
         if ready is None:
             self.save_global()
-            return "The queue is empty"
+            return ("The queue is empty", None)
         singer, song = ready
         self.queue.append(singer)
         self.current = (singer, song)
         self.save_global()
-        return f"Next up: {self._format_song(song)} \\(by {escape_markdown(self._name(singer))}\\)\nCommands: /next /listall /remove /notready"
+        return (
+            f"Singer: {escape_markdown(self._name(singer))}\n"
+            f"Song: {self._format_song(song)}",
+            song,
+        )
 
     def _pop_next_singer(self) -> int | None:
         if self.new_users:

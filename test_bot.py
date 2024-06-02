@@ -59,8 +59,7 @@ async def test_markdown():
     for call in tgbot.send_message.call_args_list:
         if call.kwargs["parse_mode"] == ParseMode.MARKDOWN_V2:
             assert call.kwargs["text"] == (
-                "Next up: https://youtu.be/xyzzy42 \\(by @user\\_name\\)\n"
-                "Commands: /next /listall /remove /notready"
+                "Singer: @user\\_name\n" "Song: https://youtu.be/xyzzy42"
             )
 
 
