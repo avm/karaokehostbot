@@ -1,7 +1,6 @@
 from collections import defaultdict
 from youtube import VideoFormatter
 from gettext import ngettext
-from telegram.helpers import escape_markdown
 from telegram_markdown_text import MarkdownText
 
 
@@ -110,15 +109,20 @@ class DJ:
             return self.formatter.tg_format(song)
         return MarkdownText(song)
 
+    def _format_singer(self, singer: str) -> MarkdownText:
+        return MarkdownText(self._name(singer))
+
     def show_queue(self, user: int, show_songs: bool = False) -> str:
         their_queue = self.user_song_lists.get(user)
-        user_str = escape_markdown(f"{self._name(user)}:\n", version=2)
+        user_str = f"{self._format_singer(user)}:\n"
         if not their_queue:
             return user_str + r"\(queue empty\)"
         if not show_songs:
             n = len(their_queue)
             return user_str + ngettext(r"\(%d song\)", r"\(%d songs\)", n) % n
-        return user_str + "\n".join(self._format_song(song).escaped_text() for song in their_queue)
+        return user_str + "\n".join(
+            self._format_song(song).escaped_text() for song in their_queue
+        )
 
     def show_all_queues(
         self, requester: int | None = None, is_admin: bool = False
@@ -136,7 +140,10 @@ class DJ:
             else "No active queues"
         )
         paused_str = (
-            "Paused users: " + ", ".join(self._name(user) for user in self.paused)
+            "Paused users: "
+            + ", ".join(
+                self._format_singer(user).escaped_text() for user in self.paused
+            )
             if self.paused
             else "No paused users"
         )
@@ -165,7 +172,7 @@ class DJ:
         self.current = (singer, song)
         self.save_global()
         return (
-            f"Singer: {escape_markdown(self._name(singer))}\n"
+            f"Singer: {self._format_singer(singer)}\n"
             f"Song: {self._format_song(song)}",
             song,
         )

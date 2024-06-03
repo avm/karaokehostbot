@@ -41,7 +41,6 @@ async def test_markdown():
         admins=["admin_user"],
     )
 
-    singer1 = User(id=1, first_name="Joe", is_bot=False, username="singer1")
     admin = User(id=2, first_name="Admin", is_bot=False, username="admin_user")
     message = Message(
         from_user=admin,
@@ -72,5 +71,6 @@ def test_youtube():
         == r"[Some \[\] text](https://youtu.be/xxx)"
     )
     assert (
-        vf.tg_format("https://youtu.be/yyy").escaped_text() == r"[Some \(more\)](https://youtu.be/yyy)"
+        vf.tg_format("https://youtu.be/yyy").escaped_text()
+        == r"[Some \(more\)](https://youtu.be/yyy)"
     )
