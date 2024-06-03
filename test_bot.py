@@ -59,7 +59,7 @@ async def test_markdown():
     for call in tgbot.send_message.call_args_list:
         if call.kwargs["parse_mode"] == ParseMode.MARKDOWN_V2:
             assert call.kwargs["text"] == (
-                "Singer: @user\\_name\n" "Song: https://youtu.be/xyzzy42"
+                "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42"
             )
 
 
@@ -68,9 +68,9 @@ def test_youtube():
         "", {"youtube:xxx": "Some [] text", "youtube:yyy": "Some (more)"}
     )
     assert (
-        vf.tg_format("https://youtu.be/xxx")
+        vf.tg_format("https://youtu.be/xxx").escaped_text()
         == r"[Some \[\] text](https://youtu.be/xxx)"
     )
     assert (
-        vf.tg_format("https://youtu.be/yyy") == r"[Some \(more\)](https://youtu.be/yyy)"
+        vf.tg_format("https://youtu.be/yyy").escaped_text() == r"[Some \(more\)](https://youtu.be/yyy)"
     )

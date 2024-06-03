@@ -2,6 +2,7 @@ from collections import defaultdict
 from youtube import VideoFormatter
 from gettext import ngettext
 from telegram.helpers import escape_markdown
+from telegram_markdown_text import MarkdownText
 
 
 class DJ:
@@ -104,10 +105,10 @@ class DJ:
             return f"{self._name(user)} removed from the queue"
         return f"{self._name(user)} was not on the queue :-o"
 
-    def _format_song(self, song: str) -> str:
+    def _format_song(self, song: str) -> MarkdownText:
         if self.formatter:
             return self.formatter.tg_format(song)
-        return song
+        return MarkdownText(song)
 
     def show_queue(self, user: int, show_songs: bool = False) -> str:
         their_queue = self.user_song_lists.get(user)
@@ -117,7 +118,7 @@ class DJ:
         if not show_songs:
             n = len(their_queue)
             return user_str + ngettext(r"\(%d song\)", r"\(%d songs\)", n) % n
-        return user_str + "\n".join(self._format_song(song) for song in their_queue)
+        return user_str + "\n".join(self._format_song(song).escaped_text() for song in their_queue)
 
     def show_all_queues(
         self, requester: int | None = None, is_admin: bool = False

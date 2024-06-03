@@ -253,6 +253,17 @@ files = [
 ]
 
 [[package]]
+name = "telegram-markdown-text"
+version = "0.4.1"
+description = "Simple MarkdownV2 string builder for the Telegram API"
+optional = false
+python-versions = "*"
+files = [
+    {file = "telegram_markdown_text-0.4.1-py3-none-any.whl", hash = "sha256:6e8782d86b23db2b189e06147795f8aaac88a32d032062ab300e87087b8f15be"},
+    {file = "telegram_markdown_text-0.4.1.tar.gz", hash = "sha256:dc0d817eac6ddb9d5a9dac646ca373c03f7cefad46f8e2ffe06b6d5ecc5bd3da"},
+]
+
+[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -277,4 +288,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "e701fa4c1d644c78e5e04604573a810da82ae3b15a4e61dbaed64502bc4c1ec9"
+content-hash = "bbf34056c46fffeb0f39456de8e01552c394a1cbcdd5a9f58f6d7d535e83aa65"

@@ -1,6 +1,7 @@
 import httpx
 from urllib.parse import urlparse, parse_qs
 from telegram.helpers import escape_markdown
+from telegram_markdown_text import MarkdownText, InlineUrl
 
 
 def extract_youtube_id(url: str) -> str | None:
@@ -29,10 +30,11 @@ class VideoFormatter:
             return None
         return self.db.get(self._db_key(yt_id))
 
-    def tg_format(self, url: str) -> str:
+    def tg_format(self, url: str) -> MarkdownText:
         if title := self.get_title(url):
+            return InlineUrl(text=title, url=url)
             return f"[{escape_markdown(title, version=2)}]({url})"
-        return url
+        return MarkdownText(url)
 
     @staticmethod
     def _db_key(yt_id: str) -> str:

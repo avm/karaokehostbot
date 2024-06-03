@@ -1,4 +1,5 @@
 from dj import DJ
+from telegram_markdown_text import MarkdownText
 
 
 def format_next(name, song, url=None):
@@ -176,8 +177,8 @@ def test_pause_enqueue():
 
 
 class DummyFormatter(dict):
-    def tg_format(self, url: str) -> str:
-        return self.get(url, url)
+    def tg_format(self, url: str) -> MarkdownText:
+        return MarkdownText(self.get(url, url))
 
 
 def test_formatter():
