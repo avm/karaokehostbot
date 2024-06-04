@@ -1,4 +1,4 @@
 python-telegram-bot~=21.1.1
 python-dotenv
 pytest-asyncio
-niquests~=3.6.5
+telegram_markdown_text~=0.4.1
