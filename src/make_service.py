@@ -36,7 +36,7 @@ def enable_service(service_name):
 
 if __name__ == "__main__":
     service_name = "kara0ke_party_bot"
-    exec_start = "bot.py"
+    exec_start = "src/bot.py"
     working_directory = os.path.dirname(os.path.abspath(__file__))
 
     service_file_path = create_service(service_name, exec_start, working_directory)

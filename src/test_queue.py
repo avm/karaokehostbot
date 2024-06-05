@@ -9,7 +9,7 @@ def format_next(name, song, url=None):
     )
 
 
-empty_queue = ("The queue is empty", None)
+empty_queue = ("The queue is empty", "")
 
 
 def test_queue():
@@ -108,8 +108,8 @@ def test_pause():
             "Use /unpause when you are ready!",
         ),
         (None, "avm was paused"),
-        (None, format_next("guest1", "01")),
     ]
+    assert dj.next() == format_next("guest1", "01")
     dj.enqueue(3, "03")
     dj.register(4, "guest2")
     dj.enqueue(4, "04")
@@ -121,7 +121,7 @@ def test_pause():
     assert dj.next() == format_next("avm", "03")
     assert dj.next() == format_next("guest1", "03")
     assert dj.next() == format_next("avm", "Elvis")
-    assert dj.next() == ("The queue is empty", None)
+    assert dj.next() == empty_queue
 
 
 def test_listall():
@@ -172,7 +172,7 @@ def test_pause_enqueue():
     dj.pause(1)
     dj.enqueue(1, "01")
     dj.enqueue(1, "03")
-    assert dj.next() == ("The queue is empty", None)
+    assert dj.next() == empty_queue
     dj.unpause(1)
     assert dj.next() == format_next("1", "01")
 

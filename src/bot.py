@@ -2,14 +2,13 @@
 import os
 import logging
 import shelve
-from telegram import Update, User, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, User, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from telegram.ext import (
     Application,
     CommandHandler,
     CallbackQueryHandler,
     MessageHandler,
     filters,
-    ContextTypes,
     CallbackContext,
 )
 from telegram.constants import ParseMode
@@ -19,6 +18,8 @@ from dj import DJ
 from youtube import VideoFormatter
 
 load_dotenv()
+
+# pyre-ignore-all-errors[16]
 
 # Set up logging
 logging.basicConfig(
@@ -36,7 +37,8 @@ YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 ADMIN_USERNAMES = os.environ.get("ADMIN_USERNAMES", "").split(",")
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def start(update: Update, context: CallbackContext) -> None:
+    assert update.message is not None
     await update.message.reply_text(
         "\n".join(
             (
@@ -77,34 +79,35 @@ class KaraokeBot:
     def _register(self, user: User) -> None:
         self.dj.register(user.id, format_name(user))
 
-    async def request_song(
-        self, update: Update, context: ContextTypes.DEFAULT_TYPE
-    ) -> None:
-        user = update.message.from_user
+    async def request_song(self, update: Update, context: CallbackContext) -> None:
+        message = update.message
+        assert message and message.from_user
+        user = message.from_user
         self._register(user)
-        song = update.message.text
+        song = message.text or ""
 
         if not is_url(song):
-            await update.message.reply_text("Invalid link. Please try again.")
+            await message.reply_text("Invalid link. Please try again.")
             return
 
         self.dj.enqueue(user.id, song)
-        await update.message.reply_text(
-            "Your song request has been added to your list."
-        )
+        await message.reply_text("Your song request has been added to your list.")
         if self.formatter:
             await self.formatter.register_url(song)
 
-    async def next(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        if not self.is_admin(update.message.from_user.username):
-            await update.message.reply_text("Only the admin can use this command.")
+    async def next(self, update: Update, context: CallbackContext) -> None:
+        message = update.message
+        if not (message and message.from_user and message.from_user.username):
             return
-        await self.next_impl(update)
+        if not self.is_admin(message.from_user.username):
+            await message.reply_text("Only the admin can use this command.")
+            return
+        await self.next_impl(message)
 
-    async def next_impl(self, update: Update) -> None:
+    async def next_impl(self, message: Message) -> None:
         text, url = self.dj.next()
-        if url is None:
-            await update.effective_message.reply_text(text)
+        if not url:
+            await message.reply_text(text)
             return
 
         song_button = InlineKeyboardButton(text="▶️ Play song", url=url)
@@ -116,7 +119,7 @@ class KaraokeBot:
             [[song_button], [not_ready_button], [next_button]]
         )
 
-        await update.effective_message.reply_text(
+        await message.reply_text(
             text,
             parse_mode=ParseMode.MARKDOWN_V2,
             reply_markup=inline_keyboard,
@@ -131,11 +134,10 @@ class KaraokeBot:
                     await self.notready_impl(update)
             case "next":
                 if self.is_admin(update.callback_query.from_user.username):
-                    await self.next_impl(update)
+                    assert update.effective_message is not None
+                    await self.next_impl(update.effective_message)
 
-    async def notready(
-        self, update: Update, context: ContextTypes.DEFAULT_TYPE
-    ) -> None:
+    async def notready(self, update: Update, context: CallbackContext) -> None:
         if not self.is_admin(update.message.from_user.username):
             await update.message.reply_text("Only the admin can use this command.")
             return
@@ -148,7 +150,7 @@ class KaraokeBot:
                 chat_id = update.effective_message.chat_id
             await update.get_bot().send_message(chat_id, text)
 
-    async def remove(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    async def remove(self, update: Update, context: CallbackContext) -> None:
         if not self.is_admin(update.message.from_user.username):
             await update.message.reply_text("Only the admin can use this command.")
             return
@@ -156,32 +158,28 @@ class KaraokeBot:
         msg = self.dj.remove()
         await update.message.reply_text(msg)
 
-    async def clear(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    async def clear(self, update: Update, context: CallbackContext) -> None:
         self._register(update.message.from_user)
         msg = self.dj.clear(update.message.chat_id)
         await update.message.reply_text(msg)
 
-    async def list_songs(
-        self, update: Update, context: ContextTypes.DEFAULT_TYPE
-    ) -> None:
+    async def list_songs(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
         self._register(user)
         msg = self.dj.show_queue(user.id, (user.id == update.message.chat.id))
         await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)
 
-    async def pause(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    async def pause(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
         self._register(user)
         await update.message.reply_text(self.dj.pause(user.id))
 
-    async def unpause(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    async def unpause(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
         self._register(user)
         await update.message.reply_text(self.dj.unpause(user.id))
 
-    async def list_all_queues(
-        self, update: Update, context: ContextTypes.DEFAULT_TYPE
-    ) -> None:
+    async def list_all_queues(self, update: Update, context: CallbackContext) -> None:
         is_admin = self.is_admin(update.message.from_user.username)
         msg = self.dj.show_all_queues(
             requester=update.message.chat.id, is_admin=is_admin
@@ -196,7 +194,7 @@ class KaraokeBot:
         return username in self.admins
 
 
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def error_handler(update: object, context: CallbackContext) -> None:
     logger.error(f"Exception while handling an update ({update}): {context.error}")
 
 

@@ -9,8 +9,8 @@ class DJ:
         self.db = db
         self.formatter = formatter
         self.names: dict[int, str] = self.db.get("names", {})
-        self.queue: list[str] = self.db.get("queue", [])
-        self.new_users: list[str] = self.db.get("new_users", [])
+        self.queue: list[int] = self.db.get("queue", [])
+        self.new_users: list[int] = self.db.get("new_users", [])
         self.paused: set[int] = self.db.get("paused", set())
         self.user_song_lists: dict[int, list[str]] = self.load_song_lists()
         self.current: tuple[int, str] = self.db.get("current")
@@ -50,10 +50,10 @@ class DJ:
             return "Your song list has been cleared"
         return "You don't have any songs in your list"
 
-    def notready(self) -> list[tuple[int, str]]:
+    def notready(self) -> list[tuple[int | None, str]]:
         if self.current is None:
             return [(None, "No current singer")]
-        messages: list[tuple[int, str]] = []
+        messages: list[tuple[int | None, str]] = []
         user, song = self.current
         self._unget_song(user, song)
         if user not in self.paused:
@@ -68,7 +68,6 @@ class DJ:
                 )
             )
             messages.append((None, f"{self._name(user)} was paused"))
-        messages.append((None, self.next()))
         return messages
 
     def pause(self, user: int) -> str:
@@ -109,7 +108,7 @@ class DJ:
             return self.formatter.tg_format(song)
         return MarkdownText(song)
 
-    def _format_singer(self, singer: str) -> MarkdownText:
+    def _format_singer(self, singer: int) -> MarkdownText:
         return MarkdownText(self._name(singer))
 
     def show_queue(self, user: int, show_songs: bool = False) -> str:
@@ -155,7 +154,7 @@ class DJ:
     def _known_users(self) -> set[int]:
         return self.paused.union(self.new_users).union(self.queue)
 
-    def enqueue(self, user: int, link: str) -> list[str]:
+    def enqueue(self, user: int, link: str) -> None:
         self.user_song_lists[user].append(link)
         self.save_song_list(user)
         if user not in self._known_users():
@@ -166,7 +165,7 @@ class DJ:
         ready = self._get_ready_singer()
         if ready is None:
             self.save_global()
-            return ("The queue is empty", None)
+            return ("The queue is empty", "")
         singer, song = ready
         self.queue.append(singer)
         self.current = (singer, song)
@@ -184,7 +183,7 @@ class DJ:
             return self.queue.pop(0)
         return None
 
-    def _get_ready_singer(self) -> tuple[str, str] | None:
+    def _get_ready_singer(self) -> tuple[int, str] | None:
         """Remove singers from the queue until we get to one who has songs in their queue"""
         return_value = None
         while singer := self._pop_next_singer():
