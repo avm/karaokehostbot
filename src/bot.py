@@ -75,6 +75,7 @@ class KaraokeBot:
         )
         self.dj = DJ(db, self.formatter)
         self.admins = set(admins)
+        self.last_msg_with_buttons: Message | None = None
 
     def _register(self, user: User) -> None:
         self.dj.register(user.id, format_name(user))
@@ -119,12 +120,16 @@ class KaraokeBot:
             [[song_button], [not_ready_button], [next_button]]
         )
 
-        await message.reply_text(
+        sent = await message.reply_text(
             text,
             parse_mode=ParseMode.MARKDOWN_V2,
             reply_markup=inline_keyboard,
             disable_web_page_preview=True,
         )
+
+        if self.last_msg_with_buttons:
+            await self.last_msg_with_buttons.edit_reply_markup(reply_markup=None)
+        self.last_msg_with_buttons = sent
 
     async def button_callback(self, update: Update, context: CallbackContext) -> None:
         await update.callback_query.answer()
