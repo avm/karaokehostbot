@@ -51,7 +51,7 @@ async def start(update: Update, context: CallbackContext) -> None:
                 "/unpause — continue singing",
                 "Admin only:",
                 "/next — show next song to be performed",
-                "/remove — remove current singer because they have left"
+                "/remove — remove current singer because they have left",
                 "/notready — pause current singer and move on",
             )
         )
