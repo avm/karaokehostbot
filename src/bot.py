@@ -12,6 +12,7 @@ from telegram.ext import (
     CallbackContext,
 )
 from telegram.constants import ParseMode
+from telegram_markdown_text import Italic
 from dotenv import load_dotenv
 
 from dj import DJ
@@ -110,6 +111,11 @@ class KaraokeBot:
         if not url:
             await message.reply_text(text)
             return
+
+        peek = self.dj.peek_next()
+        if peek:
+            notification = Italic("Next in queue: ") + self.dj._format_singer(peek)
+            text = text + "\n\n" + notification.escaped_text()
 
         song_button = InlineKeyboardButton(text="▶️ Play song", url=url)
         not_ready_button = InlineKeyboardButton(

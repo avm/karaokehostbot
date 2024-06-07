@@ -161,6 +161,14 @@ class DJ:
             self.new_users.append(user)
             self.save_global()
 
+    def peek_next(self) -> int | None:
+        next = self._pop_next_singer()
+        if next is not None:
+            # save them a place at the front
+            self.new_users.insert(0, next)
+            self.save_global()
+        return next
+
     def next(self) -> tuple[str, str]:
         ready = self._get_ready_singer()
         if ready is None:
