@@ -109,7 +109,7 @@ class KaraokeBot:
     async def next_impl(self, message: Message) -> None:
         text, url = self.dj.next()
         if not url:
-            await message.reply_text(text)
+            await message.chat.send_message(text)
             return
 
         peek = self.dj.peek_next()
@@ -126,7 +126,7 @@ class KaraokeBot:
             [[song_button], [not_ready_button], [next_button]]
         )
 
-        sent = await message.reply_text(
+        sent = await message.chat.send_message(
             text,
             parse_mode=ParseMode.MARKDOWN_V2,
             reply_markup=inline_keyboard,

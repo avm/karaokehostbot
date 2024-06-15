@@ -43,8 +43,10 @@ async def test_markdown():
         admins=["admin_user"],
     )
 
-    admin = User(id=2, first_name="Admin", is_bot=False, username="admin_user")
     tgbot = AsyncMock()
+
+    admin = User(id=2, first_name="Admin", is_bot=False, username="admin_user")
+    admin.set_bot(tgbot)
 
     def make_message(message_id, text):
         msg = Message(
