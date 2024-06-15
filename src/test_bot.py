@@ -32,34 +32,49 @@ async def test_request():
 
 @pytest.mark.asyncio
 async def test_markdown():
+    db = {
+        "queue": [1],
+        "user:1": ["https://youtu.be/xyzzy42"],
+        "user:2": [],
+        "names": {1: "@user_name", 2: "@someone_else"},
+    }
     bot = KaraokeBot(
-        {
-            "queue": [1],
-            "user:1": ["https://youtu.be/xyzzy42"],
-            "names": {1: "@user_name"},
-        },
+        db=db,
         admins=["admin_user"],
     )
 
     admin = User(id=2, first_name="Admin", is_bot=False, username="admin_user")
-    message = Message(
-        from_user=admin,
-        message_id=100,
-        date=datetime.datetime.now(),
-        chat=admin,
-        text="/next",
-    )
     tgbot = AsyncMock()
 
-    message.set_bot(tgbot)
-    update = Update(update_id=200, message=message)
+    def make_message(message_id, text):
+        msg = Message(
+            from_user=admin,
+            message_id=message_id,
+            date=datetime.datetime.now(),
+            chat=admin,
+            text=text,
+        )
+        msg.set_bot(tgbot)
+        return msg
 
+    update = Update(update_id=200, message=make_message(100, "/next"))
     await bot.next(update, context=None)
-    for call in tgbot.send_message.call_args_list:
+
+    db["new_users"] = [2]
+    db["user:2"].append("https://youtu.be/fizzbuzz")
+
+    update = Update(update_id=201, message=make_message(101, "/next"))
+    await bot.next(update, context=None)
+
+    for i, call in enumerate(tgbot.send_message.call_args_list):
         if call.kwargs["parse_mode"] == ParseMode.MARKDOWN_V2:
-            assert call.kwargs["text"] == (
-                "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42\n\n"
-                "_Next in queue: _@user\\_name"
+            assert (
+                call.kwargs["text"]
+                == [
+                    "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
+                    "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz\n\n"
+                    "_Next in queue:_ @user\\_name",
+                ][i]
             )
 
 

@@ -114,7 +114,7 @@ class KaraokeBot:
 
         peek = self.dj.peek_next()
         if peek:
-            notification = Italic("Next in queue: ") + self.dj._format_singer(peek)
+            notification = Italic("Next in queue:") + " " + self.dj._format_singer(peek)
             text = text + "\n\n" + notification.escaped_text()
 
         song_button = InlineKeyboardButton(text="▶️ Play song", url=url)
