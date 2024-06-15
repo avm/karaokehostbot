@@ -2,7 +2,6 @@ from bot import KaraokeBot
 from youtube import VideoFormatter
 from unittest.mock import AsyncMock
 from telegram import Update, Message, User
-from telegram.constants import ParseMode
 import datetime
 import pytest
 
@@ -62,22 +61,17 @@ async def test_markdown():
     update = Update(update_id=200, message=make_message(100, "/next"))
     await bot.next(update, context=None)
 
-    db["new_users"] = [2]
-    db["user:2"].append("https://youtu.be/fizzbuzz")
+    bot.dj.new_users = [2]
+    bot.dj.user_song_lists[2].append("https://youtu.be/fizzbuzz")
 
     update = Update(update_id=201, message=make_message(101, "/next"))
     await bot.next(update, context=None)
 
-    for i, call in enumerate(tgbot.send_message.call_args_list):
-        if call.kwargs["parse_mode"] == ParseMode.MARKDOWN_V2:
-            assert (
-                call.kwargs["text"]
-                == [
-                    "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
-                    "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz\n\n"
-                    "_Next in queue:_ @user\\_name",
-                ][i]
-            )
+    assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
+        "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
+        "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz\n\n"
+        "_Next in queue:_ @user\\_name",
+    ]
 
 
 def test_youtube():
