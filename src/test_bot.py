@@ -1,7 +1,7 @@
 from bot import KaraokeBot
 from youtube import VideoFormatter
 from unittest.mock import AsyncMock
-from telegram import Update, Message, User
+from telegram import Update, Message, User, CallbackQuery
 import datetime
 import pytest
 
@@ -71,6 +71,113 @@ async def test_markdown():
         "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
         "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz\n\n"
         "_Next in queue:_ @user\\_name",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_buttons():
+    db = {
+        "queue": [1],
+        "user:1": ["https://youtu.be/xyzzy42"],
+        "user:2": [],
+        "names": {1: "@user_name", 2: "@someone_else"},
+    }
+    bot = KaraokeBot(
+        db=db,
+        admins=["admin_user"],
+    )
+
+    tgbot = AsyncMock()
+
+    admin = User(id=2, first_name="Admin", is_bot=False, username="admin_user")
+    admin.set_bot(tgbot)
+
+    def make_message(message_id, text):
+        msg = Message(
+            from_user=admin,
+            message_id=message_id,
+            date=datetime.datetime.now(),
+            chat=admin,
+            text=text,
+        )
+        msg.set_bot(tgbot)
+        return msg
+
+    callback_query = CallbackQuery(
+        from_user=admin,
+        id=101,
+        chat_instance="chat_instance",
+        data="next",
+        message=make_message(100, "/next"),
+    )
+    callback_query.set_bot(tgbot)
+    update = Update(update_id=200, callback_query=callback_query)
+    await bot.button_callback(update, context=None)
+
+    bot.dj.new_users = [2]
+    bot.dj.user_song_lists[2].append("https://youtu.be/fizzbuzz")
+
+    update = Update(update_id=201, message=make_message(101, "/next"))
+    await bot.next(update, context=None)
+
+    assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
+        "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
+        "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz\n\n"
+        "_Next in queue:_ @user\\_name",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_notready():
+    db = {
+        "queue": [1, 2],
+        "user:1": ["https://youtu.be/xyzzy42"],
+        "user:2": ["https://youtu.be/fizzbuzz"],
+        "names": {1: "@user_name", 2: "@someone_else"},
+    }
+    bot = KaraokeBot(
+        db=db,
+        admins=["admin_user"],
+    )
+
+    tgbot = AsyncMock()
+
+    admin = User(id=2, first_name="Admin", is_bot=False, username="admin_user")
+    admin.set_bot(tgbot)
+
+    def make_message(message_id, text):
+        msg = Message(
+            from_user=admin,
+            message_id=message_id,
+            date=datetime.datetime.now(),
+            chat=admin,
+            text=text,
+        )
+        msg.set_bot(tgbot)
+        return msg
+
+    update = Update(update_id=201, message=make_message(101, "/next"))
+    await bot.next(update, context=None)
+
+    callback_query = CallbackQuery(
+        from_user=admin,
+        id=101,
+        chat_instance="chat_instance",
+        data="not_ready",
+        message=make_message(100, "/next"),
+    )
+    callback_query.set_bot(tgbot)
+    update = Update(update_id=200, callback_query=callback_query)
+    update.set_bot(tgbot)
+    await bot.button_callback(update, context=None)
+
+    print(tgbot.send_message.call_args_list)
+    assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
+        "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42\n\n"
+        "_Next in queue:_ @someone\\_else",
+        "You were paused because you missed your turn. "
+        "Use /unpause when you are ready!",
+        "@user_name was paused",
     ]
 
 

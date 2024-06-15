@@ -159,7 +159,7 @@ class KaraokeBot:
         for chat_id, text in msgs:
             if chat_id is None:
                 chat_id = update.effective_message.chat_id
-            await update.get_bot().send_message(chat_id, text)
+            await update.get_bot().send_message(chat_id=chat_id, text=text)
 
     async def remove(self, update: Update, context: CallbackContext) -> None:
         if not self.is_admin(update.message.from_user.username):
