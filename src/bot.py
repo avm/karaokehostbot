@@ -38,26 +38,6 @@ YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 ADMIN_USERNAMES = os.environ.get("ADMIN_USERNAMES", "").split(",")
 
 
-async def start(update: Update, context: CallbackContext) -> None:
-    assert update.message is not None
-    await update.message.reply_text(
-        "\n".join(
-            (
-                "Welcome to the Karaoke Bot! Send a YouTube link to request a song.",
-                "Commands:",
-                "/list — show your queue",
-                "/listall — show all queues",
-                "/clear — clear your queue",
-                "/pause — take a break from singing",
-                "/unpause — continue singing",
-                "Admin only:",
-                "/next — show next song to be performed",
-                "/remove — remove current singer because they have left",
-                "/notready — pause current singer and move on",
-            )
-        )
-    )
-
 
 def is_url(text: str) -> bool:
     return text.startswith("https://")
@@ -80,6 +60,28 @@ class KaraokeBot:
 
     def _register(self, user: User) -> None:
         self.dj.register(user.id, format_name(user))
+
+    async def start(self, update: Update, context: CallbackContext) -> None:
+        assert update.message is not None
+        await update.message.reply_text(
+            "\n".join(
+                (
+                    "Welcome to the Karaoke Bot! Send a YouTube link to request a song.",
+                    "Commands:",
+                    "/list — show your queue",
+                    "/listall — show all queues",
+                    "/clear — clear your queue",
+                    "/pause — take a break from singing",
+                    "/unpause — continue singing",
+                ) + ((
+                    "Admin only:",
+                    "/next — show next song to be performed",
+                    "/remove — remove current singer because they have left",
+                    "/notready — pause current singer and move on",
+                    "/RESET — clear all queues",
+                ) if self.is_admin(update.message.from_user.username) else ())
+            )
+        )
 
     async def request_song(self, update: Update, context: CallbackContext) -> None:
         message = update.message
@@ -174,6 +176,18 @@ class KaraokeBot:
         msg = self.dj.clear(update.message.chat_id)
         await update.message.reply_text(msg)
 
+    async def reset(self, update: Update, context: CallbackContext) -> None:
+        if not self.is_admin(update.message.from_user.username):
+            await update.message.reply_text("Only the admin can use this command.")
+            return
+
+        messages = self.dj.reset()
+        for chat_id, text in messages:
+            if chat_id is None:
+                await update.message.reply_text(text)
+            else:
+                await update.get_bot().send_message(chat_id=chat_id, text=text)
+
     async def list_songs(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
         self._register(user)
@@ -213,8 +227,8 @@ def main() -> None:
     application = Application.builder().token(TOKEN).build()
     bot = KaraokeBot(shelve.open("bot"), ADMIN_USERNAMES)
 
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", start))
+    application.add_handler(CommandHandler("start", bot.start))
+    application.add_handler(CommandHandler("help", bot.start))
     application.add_handler(
         MessageHandler(filters.TEXT & ~filters.COMMAND, bot.request_song)
     )
@@ -227,6 +241,7 @@ def main() -> None:
     application.add_handler(CommandHandler("listall", bot.list_all_queues))
     application.add_handler(CommandHandler("pause", bot.pause))
     application.add_handler(CommandHandler("unpause", bot.unpause))
+    application.add_handler(CommandHandler("RESET", bot.reset))
 
     application.add_handler(CallbackQueryHandler(bot.button_callback))
 

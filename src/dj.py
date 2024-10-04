@@ -50,6 +50,27 @@ class DJ:
             return "Your song list has been cleared"
         return "You don't have any songs in your list"
 
+    def reset(self) -> list[tuple[int | None, str]]:
+        self.queue.clear()
+        self.new_users.clear()
+        self.paused.clear()
+        messages: list[tuple[int | None, str]] = []
+        for user, song_list in self.user_song_lists.items():
+            if not song_list:
+                continue
+            messages.append(
+                (
+                    user,
+                    "Your song list has been cleared because the queue was reset",
+                )
+            )
+            song_list.clear()
+            self.save_song_list(user)
+        self.user_song_lists.clear()
+        self.save_global()
+        messages.append((None, "The queue has been reset"))
+        return messages
+
     def notready(self) -> list[tuple[int | None, str]]:
         if self.current is None:
             return [(None, "No current singer")]

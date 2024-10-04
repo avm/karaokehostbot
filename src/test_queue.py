@@ -53,6 +53,27 @@ def test_clear():
     assert dj.next() == format_next("alice", "04")
 
 
+def test_reset():
+    dj = DJ({})
+    dj.register(1, "avm")
+    dj.register(2, "alice")
+    dj.enqueue(1, "01")
+    dj.enqueue(1, "03")
+    dj.enqueue(2, "02")
+    dj.enqueue(2, "04")
+    assert dj.next() == format_next("avm", "01")
+    assert dj.reset() == [
+        (1, "Your song list has been cleared because the queue was reset"),
+        (2, "Your song list has been cleared because the queue was reset"),
+        (None, "The queue has been reset")]
+    dj.register(3, "guest1")
+    dj.enqueue(3, "01")
+    dj.enqueue(3, "02")
+    assert dj.next() == format_next("guest1", "01")
+    assert dj.next() == format_next("guest1", "02")
+    assert dj.next() == empty_queue
+
+
 def test_empty_queue():
     dj = DJ({})
     dj.register(1, "avm")
