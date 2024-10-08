@@ -2,6 +2,8 @@ import httpx
 from urllib.parse import urlparse, parse_qs
 from telegram.helpers import escape_markdown
 from telegram_markdown_text import MarkdownText, InlineUrl
+import isodate
+import json
 
 
 def extract_youtube_id(url: str) -> str | None:
@@ -25,15 +27,25 @@ class VideoFormatter:
         self.yt_api_key = yt_api_key
         self.http = httpx.AsyncClient()
 
-    def get_title(self, url: str):
+    def get_title(self, url: str) -> dict[str, str | int] | None:
         if not (yt_id := extract_youtube_id(url)):
             return None
-        return self.db.get(self._db_key(yt_id))
+        record = self.db.get(self._db_key(yt_id))
+        if record and record.startswith('{'):
+            data = json.loads(record)
+            return data
+        if record:
+            return {'title': record, 'duration': 0}
+        return None
 
     def tg_format(self, url: str) -> MarkdownText:
-        if title := self.get_title(url):
+        if data := self.get_title(url):
+            title = data['title']
+            if duration := data.get('duration', 0):
+                minutes = duration // 60
+                seconds = duration % 60
+                title += r' (%d:%02d)' % (minutes, seconds)
             return InlineUrl(text=title, url=url)
-            return f"[{escape_markdown(title, version=2)}]({url})"
         return MarkdownText(url)
 
     @staticmethod
@@ -43,17 +55,19 @@ class VideoFormatter:
     async def _fetch_details(self, yt_id: str) -> None:
         url = "https://www.googleapis.com/youtube/v3/videos"
         response = await self.http.get(
-            url, params=dict(part="snippet", id=yt_id, key=self.yt_api_key)
+            url, params=dict(part="snippet,contentDetails", id=yt_id, key=self.yt_api_key)
         )
         data = response.json()
 
         # Extract video title and thumbnail URL
-        if data["items"]:
+        try:
             title = data["items"][0]["snippet"]["title"]
-            print("Got title for", yt_id, title)
-            self.db[self._db_key(yt_id)] = title
-        else:
-            print("Failed to fetch title for", yt_id)
+            duration = isodate.parse_duration(data["items"][0]["contentDetails"]["duration"])
+            seconds = duration.total_seconds()
+            print("Got title for", yt_id, title, 'duration', seconds)
+            self.db[self._db_key(yt_id)] = json.dumps({'title': title, 'duration': seconds})
+        except (KeyError, IndexError):
+            print("data format error", data)
 
     async def register_url(self, url: str) -> None:
         yt_id = extract_youtube_id(url)

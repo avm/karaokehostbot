@@ -243,6 +243,17 @@ files = [
 sortedcontainers = ">=2.0,<3.0"
 
 [[package]]
+name = "isodate"
+version = "0.7.0"
+description = "An ISO 8601 date/time/duration parser and formatter"
+optional = false
+python-versions = "*"
+files = [
+    {file = "isodate-0.7.0-py3-none-any.whl", hash = "sha256:bc2c92e5b9526930bebb884fe5366ef8c4f437228b836a87a49af82d859fdb16"},
+    {file = "isodate-0.7.0.tar.gz", hash = "sha256:c6332cf456314b85cc3b6ea2c45a6fa417cb1fddb361f6d2ed8f4f69e843c6d1"},
+]
+
+[[package]]
 name = "libcst"
 version = "1.4.0"
 description = "A concrete syntax tree with AST-like properties for Python 3.0 through 3.12 programs."
@@ -678,4 +689,4 @@ typing-extensions = ">=3.7.4"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "47636eb70ec99d91d47761bf24782461c0284881157ca03cb920f66d539100b6"
+content-hash = "be2bf123488404211b0c35cf1176e96ee917d687d7ec4cb1b973e907ff720739"
