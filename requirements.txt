@@ -2,3 +2,4 @@ python-telegram-bot~=21.1.1
 python-dotenv
 pytest-asyncio
 telegram_markdown_text~=0.4.1
+isodate~=0.7.0
