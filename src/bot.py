@@ -229,7 +229,9 @@ class KaraokeBot:
         user = update.message.from_user
         self._register(user)
         msg = self.dj.show_queue(user.id, (user.id == update.message.chat.id))
-        await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)
+        await update.message.reply_text(
+            msg, parse_mode=ParseMode.MARKDOWN_V2, disable_web_page_preview=True
+        )
 
     async def pause(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
