@@ -89,7 +89,9 @@ class KaraokeBot:
         button = [[InlineKeyboardButton('Add to my list', callback_data=result['url'])]]
         reply_markup = InlineKeyboardMarkup(button)
 
-        await bot.sendMessage(chat_id, result['title'], reply_markup=reply_markup)
+        text = f"{result['title']}\n<i>{result['channel']}</i>"
+        await bot.sendMessage(
+            chat_id, text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
 
     async def request_song(self, update: Update, context: CallbackContext) -> None:
         message = update.message

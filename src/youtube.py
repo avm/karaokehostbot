@@ -4,6 +4,7 @@ from telegram.helpers import escape_markdown
 from telegram_markdown_text import MarkdownText, InlineUrl
 import isodate
 import json
+import html
 
 
 def extract_youtube_id(url: str) -> str | None:
@@ -87,9 +88,10 @@ class VideoFormatter:
         data = response.json()
         return [
             {
-                "thumbnail": item["snippet"]["thumbnails"]["default"]["url"],
-                "title": item["snippet"]["title"],
-                "channel": item["snippet"]["channelTitle"],
+                "thumbnail": html.unescape(
+                    item["snippet"]["thumbnails"]["default"]["url"]),
+                "title": html.unescape(item["snippet"]["title"]),
+                "channel": html.unescape(item["snippet"]["channelTitle"]),
                 "url": f"https://www.youtube.com/watch?v={item['id']['videoId']}",
             }
             for item in data["items"]
