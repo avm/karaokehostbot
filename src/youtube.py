@@ -32,20 +32,20 @@ class VideoFormatter:
         if not (yt_id := extract_youtube_id(url)):
             return None
         record = self.db.get(self._db_key(yt_id))
-        if record and record.startswith('{'):
+        if record and record.startswith("{"):
             data = json.loads(record)
             return data
         if record:
-            return {'title': record, 'duration': 0}
+            return {"title": record, "duration": 0}
         return None
 
     def tg_format(self, url: str) -> MarkdownText:
         if data := self.get_title(url):
-            title = data['title']
-            if duration := data.get('duration', 0):
+            title = data["title"]
+            if duration := data.get("duration", 0):
                 minutes = duration // 60
                 seconds = duration % 60
-                title += r' (%d:%02d)' % (minutes, seconds)
+                title += r" (%d:%02d)" % (minutes, seconds)
             return InlineUrl(text=title, url=url)
         return MarkdownText(url)
 
@@ -56,17 +56,22 @@ class VideoFormatter:
     async def _fetch_details(self, yt_id: str) -> None:
         url = "https://www.googleapis.com/youtube/v3/videos"
         response = await self.http.get(
-            url, params=dict(part="snippet,contentDetails", id=yt_id, key=self.yt_api_key)
+            url,
+            params=dict(part="snippet,contentDetails", id=yt_id, key=self.yt_api_key),
         )
         data = response.json()
 
         # Extract video title and thumbnail URL
         try:
             title = data["items"][0]["snippet"]["title"]
-            duration = isodate.parse_duration(data["items"][0]["contentDetails"]["duration"])
+            duration = isodate.parse_duration(
+                data["items"][0]["contentDetails"]["duration"]
+            )
             seconds = duration.total_seconds()
-            print("Got title for", yt_id, title, 'duration', seconds)
-            self.db[self._db_key(yt_id)] = json.dumps({'title': title, 'duration': seconds})
+            print("Got title for", yt_id, title, "duration", seconds)
+            self.db[self._db_key(yt_id)] = json.dumps(
+                {"title": title, "duration": seconds}
+            )
         except (KeyError, IndexError):
             print("data format error", data)
 
@@ -79,17 +84,21 @@ class VideoFormatter:
         await self._fetch_details(yt_id)
 
     async def search_youtube(self, query: str) -> list[dict[str, str]]:
-        if 'karaoke' not in query.lower():
-            query += ' karaoke'
+        if "karaoke" not in query.lower():
+            query += " karaoke"
         url = "https://www.googleapis.com/youtube/v3/search"
         response = await self.http.get(
-            url, params=dict(part="snippet", q=query, key=self.yt_api_key, type="video", maxResults=3)
+            url,
+            params=dict(
+                part="snippet", q=query, key=self.yt_api_key, type="video", maxResults=3
+            ),
         )
         data = response.json()
         return [
             {
                 "thumbnail": html.unescape(
-                    item["snippet"]["thumbnails"]["default"]["url"]),
+                    item["snippet"]["thumbnails"]["default"]["url"]
+                ),
                 "title": html.unescape(item["snippet"]["title"]),
                 "channel": html.unescape(item["snippet"]["channelTitle"]),
                 "url": f"https://www.youtube.com/watch?v={item['id']['videoId']}",

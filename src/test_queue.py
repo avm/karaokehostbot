@@ -65,7 +65,8 @@ def test_reset():
     assert dj.reset() == [
         (1, "Your song list has been cleared because the queue was reset"),
         (2, "Your song list has been cleared because the queue was reset"),
-        (None, "The queue has been reset")]
+        (None, "The queue has been reset"),
+    ]
     dj.register(3, "guest1")
     dj.enqueue(3, "01")
     dj.enqueue(3, "02")

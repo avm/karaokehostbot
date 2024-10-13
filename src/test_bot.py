@@ -183,8 +183,12 @@ async def test_notready():
 
 def test_youtube():
     vf = VideoFormatter(
-        "", {"youtube:xxx": "Some [] text", "youtube:yyy": "Some (more)",
-             "youtube:zzz": '{"title":"Title","duration":70}'}
+        "",
+        {
+            "youtube:xxx": "Some [] text",
+            "youtube:yyy": "Some (more)",
+            "youtube:zzz": '{"title":"Title","duration":70}',
+        },
     )
     assert (
         vf.tg_format("https://youtu.be/xxx").escaped_text()

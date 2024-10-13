@@ -38,7 +38,6 @@ YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 ADMIN_USERNAMES = os.environ.get("ADMIN_USERNAMES", "").split(",")
 
 
-
 def is_url(text: str) -> bool:
     return text.startswith("https://")
 
@@ -73,25 +72,31 @@ class KaraokeBot:
                     "/clear — clear your queue",
                     "/pause — take a break from singing",
                     "/unpause — continue singing",
-                ) + ((
-                    "Admin only:",
-                    "/next — show next song to be performed",
-                    "/remove — remove current singer because they have left",
-                    "/notready — pause current singer and move on",
-                    "/RESET — clear all queues",
-                ) if self.is_admin(update.message.from_user.username) else ())
+                )
+                + (
+                    (
+                        "Admin only:",
+                        "/next — show next song to be performed",
+                        "/remove — remove current singer because they have left",
+                        "/notready — pause current singer and move on",
+                        "/RESET — clear all queues",
+                    )
+                    if self.is_admin(update.message.from_user.username)
+                    else ()
+                )
             )
         )
 
     async def send_search_result_with_thumbnail(self, bot, chat_id, result) -> None:
-        await bot.sendPhoto(chat_id, result['thumbnail'])
+        await bot.sendPhoto(chat_id, result["thumbnail"])
 
-        button = [[InlineKeyboardButton('Add to my list', callback_data=result['url'])]]
+        button = [[InlineKeyboardButton("Add to my list", callback_data=result["url"])]]
         reply_markup = InlineKeyboardMarkup(button)
 
         text = f"{result['title']}\n<i>{result['channel']}</i>"
         await bot.sendMessage(
-            chat_id, text, reply_markup=reply_markup, parse_mode=ParseMode.HTML)
+            chat_id, text, reply_markup=reply_markup, parse_mode=ParseMode.HTML
+        )
 
     async def request_song(self, update: Update, context: CallbackContext) -> None:
         message = update.message
@@ -102,10 +107,14 @@ class KaraokeBot:
 
         if not is_url(song):
             if self.formatter:
-                await context.bot.send_chat_action(chat_id=message.chat_id, action='typing')
+                await context.bot.send_chat_action(
+                    chat_id=message.chat_id, action="typing"
+                )
                 results = await self.formatter.search_youtube(song)
                 for r in results:
-                    await self.send_search_result_with_thumbnail(context.bot, message.chat_id, r)
+                    await self.send_search_result_with_thumbnail(
+                        context.bot, message.chat_id, r
+                    )
                 return
             await message.reply_text("Invalid link. Please try again.")
             return
@@ -121,7 +130,9 @@ class KaraokeBot:
         self._register(user)
         song = update.callback_query.data
         self.dj.enqueue(user.id, song)
-        await update.callback_query.message.reply_text("Your song request has been added to your list.")
+        await update.callback_query.message.reply_text(
+            "Your song request has been added to your list."
+        )
 
     async def next(self, update: Update, context: CallbackContext) -> None:
         message = update.message
