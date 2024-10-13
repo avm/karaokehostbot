@@ -69,8 +69,11 @@ async def test_markdown():
 
     assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
         "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
+        "You are next in the queue. Add a song to your list to sing next!",
         "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz\n\n"
         "_Next in queue:_ @user\\_name",
+        "You are next in the queue. Add a song to your list to sing next!",
+        "You may be called to sing next if the singer ahead of you is not ready",
     ]
 
 
@@ -122,8 +125,11 @@ async def test_buttons():
 
     assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
         "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
+        "You are next in the queue. Add a song to your list to sing next!",
         "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz\n\n"
         "_Next in queue:_ @user\\_name",
+        "You are next in the queue. Add a song to your list to sing next!",
+        "You may be called to sing next if the singer ahead of you is not ready",
     ]
 
 
@@ -175,6 +181,7 @@ async def test_notready():
     assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
         "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42\n\n"
         "_Next in queue:_ @someone\\_else",
+        "You are next in the queue. Get ready to sing!",
         "You were paused because you missed your turn. "
         "Use /unpause when you are ready!",
         "@user_name was paused",

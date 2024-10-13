@@ -179,6 +179,34 @@ class KaraokeBot:
             await self.last_msg_with_buttons.edit_reply_markup(reply_markup=None)
         self.last_msg_with_buttons = sent
 
+        await self.notify_next_singers(message.get_bot())
+
+    async def notify_next_singers(self, bot) -> None:
+        upcoming = self.dj.get_upcoming_singers()
+        if not upcoming:
+            return
+        next_singer, ready = upcoming[0]
+        if ready:
+            await bot.send_message(
+                next_singer,
+                text="You are next in the queue. Get ready to sing!",
+            )
+        else:
+            await bot.send_message(
+                next_singer,
+                text="You are next in the queue. Add a song to your list to sing next!",
+            )
+
+        for i, (singer, ready) in enumerate(upcoming[1:], start=1):
+            if i == 1:
+                condition = "the singer ahead of you is not ready"
+            else:
+                condition = f"the {i} singers ahead of you are not ready"
+            await bot.send_message(
+                singer,
+                text=f"You may be called to sing next if {condition}",
+            )
+
     async def button_callback(self, update: Update, context: CallbackContext) -> None:
         await update.callback_query.answer()
         match update.callback_query.data:

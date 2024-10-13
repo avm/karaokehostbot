@@ -2,6 +2,9 @@ from collections import defaultdict
 from youtube import VideoFormatter
 from gettext import ngettext
 from telegram_markdown_text import MarkdownText
+from collections import namedtuple
+
+QueueEntry = namedtuple("QueueEntry", ["singer", "is_ready"])
 
 
 class DJ:
@@ -191,6 +194,19 @@ class DJ:
             self.new_users.insert(0, next)
             self.save_global()
         return next
+
+    def get_upcoming_singers(self) -> list[QueueEntry]:
+        all_queues = self.new_users + self.queue
+        result: list[QueueEntry] = []
+        for singer in all_queues:
+            if singer in self.paused:
+                continue
+            their_queue = self.user_song_lists.get(singer)
+            ready = bool(their_queue)
+            result.append(QueueEntry(singer, ready))
+            if ready or len(result) >= 3:
+                break
+        return result
 
     def next(self) -> tuple[str, str]:
         ready = self._get_ready_singer()
