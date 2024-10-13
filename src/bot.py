@@ -115,6 +115,14 @@ class KaraokeBot:
         if self.formatter:
             await self.formatter.register_url(song)
 
+    async def enqueue_from_callback(self, update: Update) -> None:
+        assert update.callback_query
+        user = update.callback_query.from_user
+        self._register(user)
+        song = update.callback_query.data
+        self.dj.enqueue(user.id, song)
+        await update.callback_query.message.reply_text("Your song request has been added to your list.")
+
     async def next(self, update: Update, context: CallbackContext) -> None:
         message = update.message
         if not (message and message.from_user and message.from_user.username):
@@ -165,6 +173,8 @@ class KaraokeBot:
                 if self.is_admin(update.callback_query.from_user.username):
                     assert update.effective_message is not None
                     await self.next_impl(update.effective_message)
+            case _:
+                await self.enqueue_from_callback(update)
 
     async def notready(self, update: Update, context: CallbackContext) -> None:
         if not self.is_admin(update.message.from_user.username):
