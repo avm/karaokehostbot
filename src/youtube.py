@@ -41,7 +41,9 @@ class VideoFormatter:
     def tg_format(self, url: str) -> MarkdownText:
         if data := self.get_title(url):
             title = data["title"]
+            assert isinstance(title, str)
             if duration := data.get("duration", 0):
+                duration = int(duration)
                 minutes = duration // 60
                 seconds = duration % 60
                 title += r" (%d:%02d)" % (minutes, seconds)
