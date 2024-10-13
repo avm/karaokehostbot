@@ -45,7 +45,10 @@ def is_url(text: str) -> bool:
 def format_name(user: User) -> str:
     if user.username:
         return "@" + user.username
-    return f"{user.first_name} {user.last_name}"
+    name = user.first_name
+    if user.last_name:
+        name += " " + user.last_name
+    return name
 
 
 class KaraokeBot:
