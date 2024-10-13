@@ -76,3 +76,21 @@ class VideoFormatter:
         if self._db_key(yt_id) in self.db:
             return
         await self._fetch_details(yt_id)
+
+    async def search_youtube(self, query: str) -> list[dict[str, str]]:
+        if 'karaoke' not in query.lower():
+            query += ' karaoke'
+        url = "https://www.googleapis.com/youtube/v3/search"
+        response = await self.http.get(
+            url, params=dict(part="snippet", q=query, key=self.yt_api_key, type="video", maxResults=3)
+        )
+        data = response.json()
+        return [
+            {
+                "thumbnail": item["snippet"]["thumbnails"]["default"]["url"],
+                "title": item["snippet"]["title"],
+                "channel": item["snippet"]["channelTitle"],
+                "url": f"https://www.youtube.com/watch?v={item['id']['videoId']}",
+            }
+            for item in data["items"]
+        ]

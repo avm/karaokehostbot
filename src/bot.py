@@ -83,6 +83,14 @@ class KaraokeBot:
             )
         )
 
+    async def send_search_result_with_thumbnail(self, bot, chat_id, result) -> None:
+        await bot.sendPhoto(chat_id, result['thumbnail'])
+
+        button = [[InlineKeyboardButton('Add to my list', callback_data=result['url'])]]
+        reply_markup = InlineKeyboardMarkup(button)
+
+        await bot.sendMessage(chat_id, result['title'], reply_markup=reply_markup)
+
     async def request_song(self, update: Update, context: CallbackContext) -> None:
         message = update.message
         assert message and message.from_user
@@ -91,6 +99,12 @@ class KaraokeBot:
         song = message.text or ""
 
         if not is_url(song):
+            if self.formatter:
+                await context.bot.send_chat_action(chat_id=message.chat_id, action='typing')
+                results = await self.formatter.search_youtube(song)
+                for r in results:
+                    await self.send_search_result_with_thumbnail(context.bot, message.chat_id, r)
+                return
             await message.reply_text("Invalid link. Please try again.")
             return
 
