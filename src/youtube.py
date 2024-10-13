@@ -1,6 +1,5 @@
 import httpx
 from urllib.parse import urlparse, parse_qs
-from telegram.helpers import escape_markdown
 from telegram_markdown_text import MarkdownText, InlineUrl
 import isodate
 import json

@@ -133,6 +133,8 @@ class KaraokeBot:
         await update.callback_query.message.reply_text(
             "Your song request has been added to your list."
         )
+        if self.formatter:
+            await self.formatter.register_url(song)
 
     async def next(self, update: Update, context: CallbackContext) -> None:
         message = update.message
