@@ -127,6 +127,11 @@ class DJ:
             return f"{self._name(user)} removed from the queue"
         return f"{self._name(user)} was not on the queue :-o"
 
+    def _song_info(self, url: str) -> dict[str, str]:
+        if self.formatter:
+            return self.formatter.song_info(url)
+        return {"title": url, "url": url}
+
     def _format_song(self, song: str) -> MarkdownText:
         if self.formatter:
             return self.formatter.tg_format(song)
@@ -146,6 +151,40 @@ class DJ:
         return user_str + "\n".join(
             self._format_song(song).escaped_text() for song in their_queue
         )
+
+    def get_queue(self, user: int) -> list[str]:
+        their_queue = self.user_song_lists.get(user)
+        return [self._song_info(song) for song in their_queue]
+
+    def remove_song(self, user: int, index: int) -> bool:
+        their_queue = self.user_song_lists.get(user)
+        if not their_queue:
+            return False
+        try:
+            their_queue.pop(index)
+            self.save_song_list(user)
+        except IndexError:
+            return False
+        return True
+
+    def move_song(self, user: int, action: str, index: int) -> bool:
+        their_queue = self.user_song_lists.get(user)
+        if not their_queue:
+            return False
+        if action == "move_up":
+            if index <= 0:
+                return False
+            idx = index - 1
+        else:
+            if index >= len(their_queue) - 1:
+                return False
+            idx = index
+        try:
+            their_queue[idx : idx + 2] = their_queue[idx + 1], their_queue[idx]
+            self.save_song_list(user)
+        except IndexError:
+            return False
+        return True
 
     def show_all_queues(
         self, requester: int | None = None, is_admin: bool = False

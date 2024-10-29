@@ -38,6 +38,12 @@ class VideoFormatter:
             return {"title": record, "duration": 0}
         return None
 
+    def song_info(self, url: str) -> dict[str, str]:
+        if data := self.get_title(url):
+            data["url"] = url
+            return data
+        return {"title": url, "url": url}
+
     def tg_format(self, url: str) -> MarkdownText:
         if data := self.get_title(url):
             title = data["title"]

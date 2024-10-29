@@ -217,8 +217,28 @@ class KaraokeBot:
                 if self.is_admin(update.callback_query.from_user.username):
                     assert update.effective_message is not None
                     await self.next_impl(update.effective_message)
+            case "noop":
+                return
             case _:
-                await self.enqueue_from_callback(update)
+                action, _, index = update.callback_query.data.rpartition("_")
+                if action in ["move_up", "move_down", "delete"]:
+                    await self.update_list(update, action, int(index))
+                else:
+                    await self.enqueue_from_callback(update)
+
+    async def update_list(self, update: Update, action: str, index: int) -> None:
+        user = update.callback_query.from_user
+        if action == "delete":
+            action_taken = self.dj.remove_song(user.id, index)
+        else:
+            action_taken = self.dj.move_song(user.id, action, index)
+        if not action_taken:
+            return
+        songs = self.dj.get_queue(user.id)
+        text = "Your list:" if songs else "Your list is empty."
+        await update.callback_query.edit_message_text(
+            text, reply_markup=self.generate_list_markup(songs)
+        )
 
     async def notready(self, update: Update, context: CallbackContext) -> None:
         if not self.is_admin(update.message.from_user.username):
@@ -261,10 +281,38 @@ class KaraokeBot:
     async def list_songs(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
         self._register(user)
-        msg = self.dj.show_queue(user.id, (user.id == update.message.chat.id))
-        await update.message.reply_text(
-            msg, parse_mode=ParseMode.MARKDOWN_V2, disable_web_page_preview=True
+        songs = self.dj.get_queue(user.id)
+        text = "Your list:" if songs else "Your list is empty."
+        await update.get_bot().send_message(
+            chat_id=user.id,
+            text=text,
+            reply_markup=self.generate_list_markup(songs),
         )
+
+    @staticmethod
+    def generate_list_markup(songs: list[str]) -> InlineKeyboardMarkup:
+        # Build the list display with buttons
+        keyboard = []
+        empty_button_text = "⠀"  # Invisible separator character (U+2800)
+        for index, item in enumerate(songs):
+            move_up_text = "⬆️" if index > 0 else empty_button_text
+            move_down_text = "⬇️" if index < len(songs) - 1 else empty_button_text
+            buttons = [
+                InlineKeyboardButton(move_up_text, callback_data=f"move_up_{index}"),
+                InlineKeyboardButton(
+                    move_down_text, callback_data=f"move_down_{index}"
+                ),
+                InlineKeyboardButton("❌", callback_data=f"delete_{index}"),
+            ]
+            keyboard.append(
+                [
+                    InlineKeyboardButton(
+                        f"{index+1}. {item['title']}", callback_data="noop"
+                    )
+                ]
+            )
+            keyboard.append(buttons)
+        return InlineKeyboardMarkup(keyboard)
 
     async def pause(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
