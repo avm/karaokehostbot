@@ -235,7 +235,7 @@ class KaraokeBot:
         if not action_taken:
             return
         songs = self.dj.get_queue(user.id)
-        text = "Your list:" if songs else "Your list is empty."
+        text = "Your list:" if songs else "Your list is empty"
         await update.callback_query.edit_message_text(
             text, reply_markup=self.generate_list_markup(songs)
         )
@@ -282,7 +282,7 @@ class KaraokeBot:
         user = update.message.from_user
         self._register(user)
         songs = self.dj.get_queue(user.id)
-        text = "Your list:" if songs else "Your list is empty."
+        text = "Your list:" if songs else "Your list is empty"
         await update.get_bot().send_message(
             chat_id=user.id,
             text=text,

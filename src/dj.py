@@ -154,7 +154,7 @@ class DJ:
 
     def get_queue(self, user: int) -> list[str]:
         their_queue = self.user_song_lists.get(user)
-        return [self._song_info(song) for song in their_queue]
+        return [self._song_info(song) for song in their_queue or []]
 
     def remove_song(self, user: int, index: int) -> bool:
         their_queue = self.user_song_lists.get(user)

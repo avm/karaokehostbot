@@ -10,23 +10,33 @@ import pytest
 async def test_request():
     bot = KaraokeBot({}, ["admin_user"])
     singer1 = User(id=1, first_name="Joe", is_bot=False, username="singer1")
-    message = Message(
-        from_user=singer1,
-        message_id=100,
-        date=datetime.datetime.now(),
-        chat=singer1,
-        text="https://my.favorite.site/song1",
-    )
+    singer2 = User(id=2, first_name="Jane", last_name="Eyre", is_bot=False)
+
     tgbot = AsyncMock()
 
-    message.set_bot(tgbot)
-    update = Update(update_id=200, message=message)
+    def make_message(message_id, from_user, text):
+        msg = Message(
+            from_user=from_user,
+            message_id=message_id,
+            date=datetime.datetime.now(),
+            chat=from_user,
+            text=text,
+        )
+        msg.set_bot(tgbot)
+        return msg
 
+    message = make_message(100, singer1, "https://my.favorite.site/song1")
+    update = Update(update_id=200, message=message)
     await bot.request_song(update, context=None)
-    assert (
-        tgbot.send_message.call_args.kwargs["text"]
-        == "Your song request has been added to your list."
-    )
+
+    message = make_message(101, singer2, "https://my.favorite.site/song2")
+    update = Update(update_id=201, message=message)
+    await bot.request_song(update, context=None)
+
+    assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
+        "Your song request has been added to your list.",
+        "Your song request has been added to your list.",
+    ]
 
 
 @pytest.mark.asyncio
@@ -67,6 +77,10 @@ async def test_markdown():
     update = Update(update_id=201, message=make_message(101, "/next"))
     await bot.next(update, context=None)
 
+    update = Update(update_id=202, message=make_message(102, "/list"))
+    update.set_bot(tgbot)
+    await bot.list_songs(update, context=None)
+
     assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
         "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
         "You are next in the queue. Add a song to your list to sing next!",
@@ -74,6 +88,7 @@ async def test_markdown():
         "_Next in queue:_ @user\\_name",
         "You are next in the queue. Add a song to your list to sing next!",
         "You may be called to sing next if the singer ahead of you is not ready",
+        "Your list is empty",
     ]
 
 
@@ -201,6 +216,11 @@ def test_youtube():
         vf.tg_format("https://youtu.be/xxx").escaped_text()
         == r"[Some \[\] text](https://youtu.be/xxx)"
     )
+    assert vf.song_info("https://youtu.be/xxx") == {
+        "title": "Some [] text",
+        "url": "https://youtu.be/xxx",
+        "duration": 0,
+    }
     assert (
         vf.tg_format("https://youtu.be/yyy").escaped_text()
         == r"[Some \(more\)](https://youtu.be/yyy)"
@@ -209,3 +229,15 @@ def test_youtube():
         vf.tg_format("https://youtu.be/zzz").escaped_text()
         == r"[Title \(1:10\)](https://youtu.be/zzz)"
     )
+    assert (
+        vf.tg_format("https://youtube.com/watch?v=zzz").escaped_text()
+        == r"[Title \(1:10\)](https://youtube.com/watch?v=zzz)"
+    )
+    assert (
+        vf.tg_format("https://music.yandex.ru/somesong").escaped_text()
+        == r"https://music\.yandex\.ru/somesong"
+    )
+    assert vf.song_info("https://music.yandex.ru/somesong") == {
+        "title": "https://music.yandex.ru/somesong",
+        "url": "https://music.yandex.ru/somesong",
+    }
