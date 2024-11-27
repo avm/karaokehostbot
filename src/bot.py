@@ -103,6 +103,8 @@ class KaraokeBot:
 
     async def request_song(self, update: Update, context: CallbackContext) -> None:
         message = update.message
+        if message.chat.type != "private":
+            return
         assert message and message.from_user
         user = message.from_user
         self._register(user)

@@ -1,7 +1,7 @@
 from bot import KaraokeBot
 from youtube import VideoFormatter
 from unittest.mock import AsyncMock
-from telegram import Update, Message, User, CallbackQuery
+from telegram import Update, Message, CallbackQuery, Chat
 import datetime
 import pytest
 
@@ -9,8 +9,8 @@ import pytest
 @pytest.mark.asyncio
 async def test_request():
     bot = KaraokeBot({}, ["admin_user"])
-    singer1 = User(id=1, first_name="Joe", is_bot=False, username="singer1")
-    singer2 = User(id=2, first_name="Jane", last_name="Eyre", is_bot=False)
+    singer1 = Chat(id=1, first_name="Joe", username="singer1", type="private")
+    singer2 = Chat(id=2, first_name="Jane", last_name="Eyre", type="private")
 
     tgbot = AsyncMock()
 
@@ -54,7 +54,7 @@ async def test_markdown():
 
     tgbot = AsyncMock()
 
-    admin = User(id=2, first_name="Admin", is_bot=False, username="admin_user")
+    admin = Chat(id=2, first_name="Admin", username="admin_user", type="private")
     admin.set_bot(tgbot)
 
     def make_message(message_id, text):
@@ -107,7 +107,7 @@ async def test_buttons():
 
     tgbot = AsyncMock()
 
-    admin = User(id=2, first_name="Admin", is_bot=False, username="admin_user")
+    admin = Chat(id=2, first_name="Admin", type="private", username="admin_user")
     admin.set_bot(tgbot)
 
     def make_message(message_id, text):
@@ -163,7 +163,7 @@ async def test_notready():
 
     tgbot = AsyncMock()
 
-    admin = User(id=2, first_name="Admin", is_bot=False, username="admin_user")
+    admin = Chat(id=2, first_name="Admin", type="private", username="admin_user")
     admin.set_bot(tgbot)
 
     def make_message(message_id, text):
