@@ -10,7 +10,7 @@ def create_service(service_name, exec_start, working_directory):
 
     [Service]
     WorkingDirectory={working_directory}
-    ExecStart={os.path.join(working_directory, exec_start)}
+    ExecStart=poetry run python src/bot.py
     Restart=always
     RestartSec=10
 
