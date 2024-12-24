@@ -41,7 +41,9 @@ class VideoFormatter:
         record = self.db.get(self._db_key(yt_id))
         if record and record.startswith("{"):
             data = json.loads(record)
-            return SongInfo(title=data["title"], duration=data.get("duration", 0), url=url)
+            return SongInfo(
+                title=data["title"], duration=data.get("duration", 0), url=url
+            )
         if record:
             return SongInfo(title=record, duration=0, url=url)
         return None
@@ -93,7 +95,7 @@ class VideoFormatter:
         if not yt_id:
             return
         entry = self.db.get(self._db_key(yt_id))
-        if isinstance(entry, str) and entry.startswith('{'):
+        if isinstance(entry, str) and entry.startswith("{"):
             # we are already storing the details
             return
         await self._fetch_details(yt_id)

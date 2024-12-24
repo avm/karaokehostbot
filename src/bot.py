@@ -310,11 +310,7 @@ class KaraokeBot:
                 InlineKeyboardButton("❌", callback_data=f"delete_{index}"),
             ]
             keyboard.append(
-                [
-                    InlineKeyboardButton(
-                        f"{index+1}. {item.title}", callback_data="noop"
-                    )
-                ]
+                [InlineKeyboardButton(f"{index+1}. {item.title}", callback_data="noop")]
             )
             keyboard.append(buttons)
         return InlineKeyboardMarkup(keyboard)
