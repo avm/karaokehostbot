@@ -86,7 +86,9 @@ class VideoFormatter:
         yt_id = extract_youtube_id(url)
         if not yt_id:
             return
-        if self._db_key(yt_id) in self.db:
+        entry = self.db.get(self._db_key(yt_id))
+        if isinstance(entry, str) and entry.startswith('{'):
+            # we are already storing the details
             return
         await self._fetch_details(yt_id)
 
