@@ -1,5 +1,6 @@
 from dj import DJ
 from telegram_markdown_text import MarkdownText
+from youtube import SongInfo
 
 
 def format_next(name, song, url=None):
@@ -62,8 +63,8 @@ def test_reset():
     dj.enqueue(2, "02")
     dj.enqueue(2, "04")
     assert dj.get_queue(1) == [
-        {"title": "01", "url": "01"},
-        {"title": "03", "url": "03"},
+        SongInfo(title="01", url="01", duration=0),
+        SongInfo(title="03", url="03", duration=0),
     ]
     assert dj.next() == format_next("avm", "01")
     assert dj.reset() == [

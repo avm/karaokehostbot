@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 import httpx
 from urllib.parse import urlparse, parse_qs
 from telegram_markdown_text import MarkdownText, InlineUrl
@@ -21,35 +22,40 @@ def extract_youtube_id(url: str) -> str | None:
     return None
 
 
+@dataclass
+class SongInfo:
+    title: str
+    url: str
+    duration: float
+
+
 class VideoFormatter:
     def __init__(self, yt_api_key: str, db={}):
         self.db = db
         self.yt_api_key = yt_api_key
         self.http = httpx.AsyncClient()
 
-    def get_title(self, url: str) -> dict[str, str | int] | None:
+    def get_data(self, url: str) -> SongInfo | None:
         if not (yt_id := extract_youtube_id(url)):
             return None
         record = self.db.get(self._db_key(yt_id))
         if record and record.startswith("{"):
             data = json.loads(record)
-            return data
+            return SongInfo(title=data["title"], duration=data.get("duration", 0), url=url)
         if record:
-            return {"title": record, "duration": 0}
+            return SongInfo(title=record, duration=0, url=url)
         return None
 
-    def song_info(self, url: str) -> dict[str, str]:
-        if data := self.get_title(url):
-            data["url"] = url
+    def song_info(self, url: str) -> SongInfo:
+        if data := self.get_data(url):
             return data
-        return {"title": url, "url": url}
+        return SongInfo(title=url, duration=0, url=url)
 
     def tg_format(self, url: str) -> MarkdownText:
-        if data := self.get_title(url):
-            title = data["title"]
-            assert isinstance(title, str)
-            if duration := data.get("duration", 0):
-                duration = int(duration)
+        if data := self.get_data(url):
+            title = data.title
+            if data.duration:
+                duration = int(data.duration)
                 minutes = duration // 60
                 seconds = duration % 60
                 title += r" (%d:%02d)" % (minutes, seconds)

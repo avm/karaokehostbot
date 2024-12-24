@@ -6,7 +6,7 @@ from telegram import Update
 from telegram.ext import (
     Application,
     CommandHandler,
-    ContextTypes,
+    CallbackContext,
     MessageHandler,
     filters,
 )
@@ -25,8 +25,9 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def start(update: Update, context: CallbackContext) -> None:
     """Send a message when the command /start is issued."""
+    assert update.message is not None
     await update.message.reply_text("Please use @karaokehostbot instead")
 
 

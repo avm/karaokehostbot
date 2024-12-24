@@ -16,7 +16,7 @@ from telegram_markdown_text import Italic
 from dotenv import load_dotenv
 
 from dj import DJ
-from youtube import VideoFormatter
+from youtube import VideoFormatter, SongInfo
 
 load_dotenv()
 
@@ -295,7 +295,7 @@ class KaraokeBot:
         )
 
     @staticmethod
-    def generate_list_markup(songs: list[str]) -> InlineKeyboardMarkup:
+    def generate_list_markup(songs: list[SongInfo]) -> InlineKeyboardMarkup:
         # Build the list display with buttons
         keyboard = []
         empty_button_text = "⠀"  # Invisible separator character (U+2800)
@@ -312,7 +312,7 @@ class KaraokeBot:
             keyboard.append(
                 [
                     InlineKeyboardButton(
-                        f"{index+1}. {item['title']}", callback_data="noop"
+                        f"{index+1}. {item.title}", callback_data="noop"
                     )
                 ]
             )

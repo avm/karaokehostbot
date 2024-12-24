@@ -1,5 +1,5 @@
 from bot import KaraokeBot
-from youtube import VideoFormatter
+from youtube import VideoFormatter, SongInfo
 from unittest.mock import AsyncMock
 from telegram import Update, Message, CallbackQuery, Chat
 import datetime
@@ -216,11 +216,11 @@ def test_youtube():
         vf.tg_format("https://youtu.be/xxx").escaped_text()
         == r"[Some \[\] text](https://youtu.be/xxx)"
     )
-    assert vf.song_info("https://youtu.be/xxx") == {
-        "title": "Some [] text",
-        "url": "https://youtu.be/xxx",
-        "duration": 0,
-    }
+    assert vf.song_info("https://youtu.be/xxx") == SongInfo(
+        title="Some [] text",
+        url="https://youtu.be/xxx",
+        duration=0,
+    )
     assert (
         vf.tg_format("https://youtu.be/yyy").escaped_text()
         == r"[Some \(more\)](https://youtu.be/yyy)"
@@ -237,7 +237,8 @@ def test_youtube():
         vf.tg_format("https://music.yandex.ru/somesong").escaped_text()
         == r"https://music\.yandex\.ru/somesong"
     )
-    assert vf.song_info("https://music.yandex.ru/somesong") == {
-        "title": "https://music.yandex.ru/somesong",
-        "url": "https://music.yandex.ru/somesong",
-    }
+    assert vf.song_info("https://music.yandex.ru/somesong") == SongInfo(
+        title="https://music.yandex.ru/somesong",
+        url="https://music.yandex.ru/somesong",
+        duration=0,
+    )

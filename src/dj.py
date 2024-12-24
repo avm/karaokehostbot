@@ -1,5 +1,5 @@
 from collections import defaultdict
-from youtube import VideoFormatter
+from youtube import VideoFormatter, SongInfo
 from gettext import ngettext
 from telegram_markdown_text import MarkdownText
 from collections import namedtuple
@@ -127,10 +127,10 @@ class DJ:
             return f"{self._name(user)} removed from the queue"
         return f"{self._name(user)} was not on the queue :-o"
 
-    def _song_info(self, url: str) -> dict[str, str]:
+    def _song_info(self, url: str) -> SongInfo:
         if self.formatter:
             return self.formatter.song_info(url)
-        return {"title": url, "url": url}
+        return SongInfo(title=url, duration=0, url=url)
 
     def _format_song(self, song: str) -> MarkdownText:
         if self.formatter:
@@ -152,7 +152,7 @@ class DJ:
             self._format_song(song).escaped_text() for song in their_queue
         )
 
-    def get_queue(self, user: int) -> list[str]:
+    def get_queue(self, user: int) -> list[SongInfo]:
         their_queue = self.user_song_lists.get(user)
         return [self._song_info(song) for song in their_queue or []]
 
