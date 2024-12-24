@@ -51,6 +51,13 @@ def format_name(user: User) -> str:
     return name
 
 
+async def maybe(coro):
+    try:
+        await coro
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+
 class KaraokeBot:
     def __init__(self, db: shelve.Shelf, admins: list[str]):
         self.formatter = (
@@ -125,9 +132,16 @@ class KaraokeBot:
             return
 
         self.dj.enqueue(user.id, song)
-        await message.reply_text("Your song request has been added to your list.")
+        await self.reply_text(message, "Your song request has been added to your list.")
         if self.formatter:
             await self.formatter.register_url(song)
+
+    @staticmethod
+    async def reply_text(message: Message, text: str) -> None:
+        try:
+            await message.reply_text(text)
+        except Exception as e:
+            logger.error(f"Error sending message to {message.chat_id}: {e}")
 
     async def enqueue_from_callback(self, update: Update) -> None:
         assert update.callback_query
@@ -135,8 +149,9 @@ class KaraokeBot:
         self._register(user)
         song = update.callback_query.data
         self.dj.enqueue(user.id, song)
-        await update.callback_query.message.reply_text(
-            "Your song request has been added to your list."
+        await self.reply_text(
+            update.callback_query.message,
+            "Your song request has been added to your list.",
         )
         if self.formatter:
             await self.formatter.register_url(song)
@@ -189,14 +204,18 @@ class KaraokeBot:
             return
         next_singer, ready = upcoming[0]
         if ready:
-            await bot.send_message(
-                next_singer,
-                text="You are next in the queue. Get ready to sing!",
+            await maybe(
+                bot.send_message(
+                    next_singer,
+                    text="You are next in the queue. Get ready to sing!",
+                )
             )
         else:
-            await bot.send_message(
-                next_singer,
-                text="You are next in the queue. Add a song to your list to sing next!",
+            await maybe(
+                bot.send_message(
+                    next_singer,
+                    text="You are next in the queue. Add a song to your list to sing next!",
+                )
             )
 
         for i, (singer, ready) in enumerate(upcoming[1:], start=1):
@@ -204,9 +223,11 @@ class KaraokeBot:
                 condition = "the singer ahead of you is not ready"
             else:
                 condition = f"the {i} singers ahead of you are not ready"
-            await bot.send_message(
-                singer,
-                text=f"You may be called to sing next if {condition}",
+            await maybe(
+                bot.send_message(
+                    singer,
+                    text=f"You may be called to sing next if {condition}",
+                )
             )
 
     async def button_callback(self, update: Update, context: CallbackContext) -> None:
