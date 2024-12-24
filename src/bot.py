@@ -275,10 +275,13 @@ class KaraokeBot:
 
         messages = self.dj.reset()
         for chat_id, text in messages:
-            if chat_id is None:
-                await update.message.reply_text(text)
-            else:
-                await update.get_bot().send_message(chat_id=chat_id, text=text)
+            try:
+                if chat_id is None:
+                    await update.message.reply_text(text)
+                else:
+                    await update.get_bot().send_message(chat_id=chat_id, text=text)
+            except Exception as e:
+                logger.error(f"Error sending message to {chat_id}: {e}")
 
     async def list_songs(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
