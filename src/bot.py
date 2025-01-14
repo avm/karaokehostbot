@@ -1,5 +1,6 @@
 #!./venv/bin/python3
 import os
+import asyncio
 import logging
 import shelve
 from telegram import Update, User, InlineKeyboardButton, InlineKeyboardMarkup, Message
@@ -13,6 +14,7 @@ from telegram.ext import (
 )
 from telegram.constants import ParseMode
 from telegram_markdown_text import Italic
+from aiohttp import web
 from dotenv import load_dotenv
 
 from dj import DJ
@@ -66,6 +68,7 @@ class KaraokeBot:
         self.dj = DJ(db, self.formatter)
         self.admins = set(admins)
         self.last_msg_with_buttons: Message | None = None
+        self.websockets = []
 
     def _register(self, user: User) -> None:
         self.dj.register(user.id, format_name(user))
@@ -170,6 +173,13 @@ class KaraokeBot:
         if not url:
             await message.chat.send_message(text)
             return
+
+        try:
+            print(self.websockets)
+            for ws in self.websockets:
+                await ws.send_str(url)
+        except Exception as e:
+            logger.error(f"Error sending message to websocket: {e}")
 
         peek = self.dj.peek_next()
         if peek:
@@ -383,13 +393,47 @@ def main() -> None:
     application.add_handler(CommandHandler("listall", bot.list_all_queues))
     application.add_handler(CommandHandler("pause", bot.pause))
     application.add_handler(CommandHandler("unpause", bot.unpause))
+    application.add_handler(CommandHandler("web", bot.web))
     application.add_handler(CommandHandler("RESET", bot.reset))
 
     application.add_handler(CallbackQueryHandler(bot.button_callback))
 
     application.add_error_handler(error_handler)
 
-    application.run_polling()
+    async def websocket_handler(request):
+        print("running websocket_handler")
+        ws = web.WebSocketResponse()
+        print("preparing request")
+        await ws.prepare(request)
+        bot.websockets.append(ws)
+
+        try:
+            async for msg in ws:
+                print("Received message:", msg)
+        finally:
+            bot.websockets.remove(ws)
+            await ws.close()
+        return ws
+
+    async def init_http_server():
+        app = web.Application()
+        app.router.add_get("/ws", websocket_handler)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "0.0.0.0", 8080)
+        await site.start()
+        print("HTTP server running on http://0.0.0.0:8080")
+        while True:
+            await asyncio.sleep(3600)  # Keep the server running
+
+    # Run both the Telegram bot and the HTTP server concurrently
+    async def run():
+        await application.initialize()
+        await application.start()
+        await application.updater.start_polling()
+        await init_http_server()
+
+    asyncio.run(run())
 
 
 if __name__ == "__main__":
