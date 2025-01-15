@@ -39,10 +39,13 @@ async def websocket_client(driver, uri):
                 # Wait for the video player to load
                 time.sleep(3)
 
-                play_button = driver.find_element(
-                    By.CSS_SELECTOR, "button.ytp-fullscreen-button"
-                )
-                play_button.click()
+                try:
+                    play_button = driver.find_element(
+                        By.CSS_SELECTOR, "button.ytp-fullscreen-button"
+                    )
+                    play_button.click()
+                except Exception as e:
+                    print(f"Error: {e}")
 
         except websockets.ConnectionClosed:
             print("WebSocket connection closed.")
