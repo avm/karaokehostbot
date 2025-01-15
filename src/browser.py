@@ -46,8 +46,6 @@ async def websocket_client(driver, uri):
 
         except websockets.ConnectionClosed:
             print("WebSocket connection closed.")
-        finally:
-            driver.quit()
 
 
 # Main function to start the WebSocket client and WebDriver
@@ -58,9 +56,9 @@ def main():
 
     driver = setup_driver()
     try:
-        asyncio.run(websocket_client(driver, args.uri))
-    except KeyboardInterrupt:
-        print("Program interrupted. Exiting...")
+        while True:
+            asyncio.run(websocket_client(driver, args.uri))
+    finally:
         driver.quit()
 
 
