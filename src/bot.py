@@ -393,7 +393,6 @@ def main() -> None:
     application.add_handler(CommandHandler("listall", bot.list_all_queues))
     application.add_handler(CommandHandler("pause", bot.pause))
     application.add_handler(CommandHandler("unpause", bot.unpause))
-    application.add_handler(CommandHandler("web", bot.web))
     application.add_handler(CommandHandler("RESET", bot.reset))
 
     application.add_handler(CallbackQueryHandler(bot.button_callback))

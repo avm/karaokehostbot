@@ -3,6 +3,7 @@ import os
 
 
 def create_service(service_name, exec_start, working_directory):
+    localbin = os.path.expanduser("~/.local/bin")
     service_content = f"""
     [Unit]
     Description={service_name}
@@ -10,7 +11,7 @@ def create_service(service_name, exec_start, working_directory):
 
     [Service]
     WorkingDirectory={working_directory}
-    ExecStart=poetry run python src/bot.py
+    ExecStart={localbin}/poetry run python {exec_start}
     Restart=always
     RestartSec=10
 
@@ -37,7 +38,7 @@ def enable_service(service_name):
 if __name__ == "__main__":
     service_name = "kara0ke_party_bot"
     exec_start = "src/bot.py"
-    working_directory = os.path.dirname(os.path.abspath(__file__))
+    working_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     service_file_path = create_service(service_name, exec_start, working_directory)
     enable_service(service_name)
