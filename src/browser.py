@@ -1,12 +1,15 @@
 import asyncio
 import websockets
+import argparse
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+import time
 
 # WebSocket server settings
 WEBSOCKET_SERVER_URI = (
-    "ws://localhost:8080/ws"  # Replace with your WebSocket server URI
+    "ws://karaoke.myltsev.ru:8080/ws"  # Replace with your WebSocket server URI
 )
 
 
@@ -24,14 +27,23 @@ def setup_driver():
 
 
 # WebSocket client to receive URLs
-async def websocket_client(driver):
-    async with websockets.connect(WEBSOCKET_SERVER_URI) as websocket:
-        print(f"Connected to WebSocket server at {WEBSOCKET_SERVER_URI}")
+async def websocket_client(driver, uri):
+    async with websockets.connect(uri) as websocket:
+        print(f"Connected to WebSocket server at {uri}")
         try:
             async for message in websocket:
                 print(f"Received URL: {message}")
                 # Navigate to the received URL
                 driver.get(message)
+
+                # Wait for the video player to load
+                time.sleep(3)
+
+                play_button = driver.find_element(
+                    By.CSS_SELECTOR, "button.ytp-fullscreen-button"
+                )
+                play_button.click()
+
         except websockets.ConnectionClosed:
             print("WebSocket connection closed.")
         finally:
@@ -40,9 +52,13 @@ async def websocket_client(driver):
 
 # Main function to start the WebSocket client and WebDriver
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--uri", default=WEBSOCKET_SERVER_URI)
+    args = parser.parse_args()
+
     driver = setup_driver()
     try:
-        asyncio.run(websocket_client(driver))
+        asyncio.run(websocket_client(driver, args.uri))
     except KeyboardInterrupt:
         print("Program interrupted. Exiting...")
         driver.quit()
