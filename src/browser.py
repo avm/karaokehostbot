@@ -60,7 +60,10 @@ def main():
     driver = setup_driver()
     try:
         while True:
-            asyncio.run(websocket_client(driver, args.uri))
+            try:
+                asyncio.run(websocket_client(driver, args.uri))
+            except Exception as e:
+                print(f"Error: {e}")
     finally:
         driver.quit()
 
