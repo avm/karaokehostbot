@@ -414,9 +414,13 @@ def main() -> None:
             await ws.close()
         return ws
 
+    async def static_handler(request):
+        return web.FileResponse("interface.html")
+
     async def init_http_server():
         app = web.Application()
         app.router.add_get("/ws", websocket_handler)
+        app.router.add_get("/", static_handler)
         runner = web.AppRunner(app)
         await runner.setup()
         site = web.TCPSite(runner, "0.0.0.0", 8080)
