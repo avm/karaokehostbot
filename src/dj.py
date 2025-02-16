@@ -217,12 +217,16 @@ class DJ:
     def _known_users(self) -> set[int]:
         return self.paused.union(self.new_users).union(self.queue)
 
-    def enqueue(self, user: int, link: str) -> None:
-        self.user_song_lists[user].append(link)
+    def enqueue(self, user: int, link: str) -> bool:
+        song_list = self.user_song_lists[user]
+        if link in song_list:
+            return False
+        song_list.append(link)
         self.save_song_list(user)
         if user not in self._known_users():
             self.new_users.append(user)
             self.save_global()
+        return True
 
     def peek_next(self) -> int | None:
         if len(self.new_users + self.queue) < 2:

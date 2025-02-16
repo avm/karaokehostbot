@@ -134,7 +134,10 @@ class KaraokeBot:
             await message.reply_text("Invalid link. Please try again.")
             return
 
-        self.dj.enqueue(user.id, song)
+        enqueued = self.dj.enqueue(user.id, song)
+        if not enqueued:
+            await self.reply_text(message, "This song is already on your /list")
+            return
         await self.reply_text(message, "Your song request has been added to your list.")
         if self.formatter:
             await self.formatter.register_url(song)
@@ -151,7 +154,8 @@ class KaraokeBot:
         user = update.callback_query.from_user
         self._register(user)
         song = update.callback_query.data
-        self.dj.enqueue(user.id, song)
+        if not self.dj.enqueue(user.id, song):
+            return
         await self.reply_text(
             update.callback_query.message,
             "Your song request has been added to your list.",
