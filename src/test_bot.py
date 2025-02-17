@@ -33,9 +33,13 @@ async def test_request():
     update = Update(update_id=201, message=message)
     await bot.request_song(update, context=None)
 
+    update = Update(update_id=202, message=message)
+    await bot.request_song(update, context=None)
+
     assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
         "Your song request has been added to your list.",
         "Your song request has been added to your list.",
+        "This song is already on your /list",
     ]
 
 

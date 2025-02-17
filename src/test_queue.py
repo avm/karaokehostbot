@@ -38,6 +38,13 @@ def test_queue():
     assert dj.next() == empty_queue
 
 
+def test_duplicate():
+    dj = DJ({})
+    dj.register(1, "avm")
+    dj.enqueue(1, "01")
+    assert dj.enqueue(1, "01") == False
+
+
 def test_clear():
     dj = DJ({})
     dj.register(1, "avm")
