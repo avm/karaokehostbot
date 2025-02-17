@@ -298,6 +298,15 @@ class KaraokeBot:
         msg = self.dj.remove()
         await update.message.reply_text(msg)
 
+    async def remove_with_id(self, update: Update, context: CallbackContext) -> None:
+        if not self.is_admin(update.message.from_user.username):
+            await update.message.reply_text("Only the admin can use this command.")
+            return
+
+        index = int(update.message.text.removeprefix("/remove"))
+        msg = self.dj.remove_with_id(index)
+        await update.message.reply_text(msg)
+
     async def clear(self, update: Update, context: CallbackContext) -> None:
         self._register(update.message.from_user)
         msg = self.dj.clear(update.message.chat_id)
@@ -398,6 +407,13 @@ def main() -> None:
     application.add_handler(CommandHandler("pause", bot.pause))
     application.add_handler(CommandHandler("unpause", bot.unpause))
     application.add_handler(CommandHandler("RESET", bot.reset))
+
+    application.add_handler(
+        MessageHandler(
+            filters.Regex(r"^/remove\d+$"),
+            lambda update, context: bot.remove_with_id(update, context),
+        )
+    )
 
     application.add_handler(CallbackQueryHandler(bot.button_callback))
 

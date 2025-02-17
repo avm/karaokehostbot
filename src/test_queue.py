@@ -194,9 +194,9 @@ def test_listall():
     assert dj.show_all_queues(is_admin=True) == "\n\n".join(
         (
             "All queues:",
-            "avm:\n01\n03",
-            "alice:\n\\(queue empty\\)",
-            "@avi\\_avi:\nAA\nBB",
+            "avm /remove1:\n01\n03",
+            "alice /remove2:\n\\(queue empty\\)",
+            "@avi\\_avi /remove3:\nAA\nBB",
             "Paused users: alice, @avi\\_avi",
         )
     )

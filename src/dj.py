@@ -118,6 +118,9 @@ class DJ:
         if self.current is None:
             return "No current singer"
         user, _ = self.current
+        return self.remove_with_id(user)
+
+    def remove_with_id(self, user: int) -> str:
         if user in self.queue:
             self.queue.remove(user)
             self.save_global()
@@ -140,9 +143,12 @@ class DJ:
     def _format_singer(self, singer: int) -> MarkdownText:
         return MarkdownText(self._name(singer))
 
-    def show_queue(self, user: int, show_songs: bool = False) -> str:
+    def show_queue(
+        self, user: int, show_songs: bool = False, show_remove: bool = False
+    ) -> str:
         their_queue = self.user_song_lists.get(user)
-        user_str = f"{self._format_singer(user)}:\n"
+        remove = "" if not show_remove else " /remove{}".format(user)
+        user_str = f"{self._format_singer(user)}{remove}:\n"
         if not their_queue:
             return user_str + r"\(queue empty\)"
         if not show_songs:
@@ -194,7 +200,11 @@ class DJ:
             (
                 "All queues:\n\n"
                 + "\n\n".join(
-                    self.show_queue(u, (is_admin or (u == requester)))
+                    self.show_queue(
+                        u,
+                        show_songs=(is_admin or (u == requester)),
+                        show_remove=is_admin,
+                    )
                     for u in all_queues
                 )
             )
