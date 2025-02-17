@@ -189,20 +189,32 @@ async def test_notready():
         id=101,
         chat_instance="chat_instance",
         data="not_ready",
-        message=make_message(100, "/next"),
+        message=make_message(100, "/undo"),
     )
     callback_query.set_bot(tgbot)
     update = Update(update_id=200, callback_query=callback_query)
     update.set_bot(tgbot)
     await bot.button_callback(update, context=None)
 
+    update = Update(update_id=202, message=make_message(102, "/undo"))
+    update.set_bot(tgbot)
+    await bot.undo(update, context=None)
+
     print(tgbot.send_message.call_args_list)
-    assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
-        "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
-        "You are next in the queue. Get ready to sing!",
-        "You were paused because you missed your turn. "
-        "Use /unpause when you are ready!",
-        "@user_name was paused",
+    assert [
+        (call.kwargs["chat_id"], call.kwargs["text"])
+        for call in tgbot.send_message.call_args_list
+    ] == [
+        (2, "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42"),
+        (2, "You are next in the queue. Get ready to sing!"),
+        (
+            1,
+            "You were paused because you missed your turn. "
+            "Use /unpause when you are ready!",
+        ),
+        (2, "@user_name was paused (/undo)"),
+        (2, "@user_name is now unpaused"),
+        (1, "You are now unpaused"),
     ]
 
 

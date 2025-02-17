@@ -220,14 +220,14 @@ class KaraokeBot:
         if ready:
             await maybe(
                 bot.send_message(
-                    next_singer,
+                    chat_id=next_singer,
                     text="You are next in the queue. Get ready to sing!",
                 )
             )
         else:
             await maybe(
                 bot.send_message(
-                    next_singer,
+                    chat_id=next_singer,
                     text="You are next in the queue. Add a song to your list to sing next!",
                 )
             )
@@ -311,6 +311,17 @@ class KaraokeBot:
         self._register(update.message.from_user)
         msg = self.dj.clear(update.message.chat_id)
         await update.message.reply_text(msg)
+
+    async def undo(self, update: Update, context: CallbackContext) -> None:
+        if not self.is_admin(update.message.from_user.username):
+            await update.message.reply_text("Only the admin can use this command.")
+            return
+
+        for to, msg in self.dj.undo():
+            if to is None:
+                await update.message.reply_text(msg)
+            else:
+                await update.get_bot().send_message(chat_id=to, text=msg)
 
     async def reset(self, update: Update, context: CallbackContext) -> None:
         if not self.is_admin(update.message.from_user.username):
@@ -407,6 +418,7 @@ def main() -> None:
     application.add_handler(CommandHandler("pause", bot.pause))
     application.add_handler(CommandHandler("unpause", bot.unpause))
     application.add_handler(CommandHandler("RESET", bot.reset))
+    application.add_handler(CommandHandler("undo", bot.undo))
 
     application.add_handler(
         MessageHandler(

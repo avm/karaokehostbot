@@ -17,6 +17,7 @@ class DJ:
         self.paused: set[int] = self.db.get("paused", set())
         self.user_song_lists: dict[int, list[str]] = self.load_song_lists()
         self.current: tuple[int, str] = self.db.get("current")
+        self.undo_list: list[tuple[str, int]] = self.db.get("undo_list", [])
 
     def save_global(self):
         self.db["names"] = self.names
@@ -24,6 +25,7 @@ class DJ:
         self.db["new_users"] = self.new_users
         self.db["current"] = self.current
         self.db["paused"] = self.paused
+        self.db["undo_list"] = self.undo_list
 
     def load_song_lists(self):
         loaded = {user: self.load_song_list(user) for user in self._known_users()}
@@ -74,24 +76,44 @@ class DJ:
         messages.append((None, "The queue has been reset"))
         return messages
 
+    def undo(self) -> list[tuple[int | None, str]]:
+        if not self.undo_list:
+            return [(None, "Nothing to undo")]
+        action, user = self.undo_list.pop()
+        if action == "paused":
+            messages: list[tuple[int | None, str]] = [
+                (None, f"{self._name(user)} is now unpaused")
+            ]
+            if user not in self.paused:
+                return messages
+            self.paused.remove(user)
+            if user not in (self.new_users + self.queue):
+                self.queue.append(user)
+            self.save_global()
+            return messages + [
+                (user, "You are now unpaused"),
+            ]
+        return [(None, "Unknown undo action")]
+
     def notready(self) -> list[tuple[int | None, str]]:
         if self.current is None:
             return [(None, "No current singer")]
-        messages: list[tuple[int | None, str]] = []
         user, song = self.current
         self._unget_song(user, song)
-        if user not in self.paused:
-            self.paused.add(user)
-            if user in self.queue:
-                self.queue.remove(user)
-            messages.append(
-                (
-                    user,
-                    "You were paused because you missed your turn. "
-                    "Use /unpause when you are ready!",
-                )
-            )
-            messages.append((None, f"{self._name(user)} was paused"))
+        if user in self.paused:
+            return []
+        self.paused.add(user)
+        if user in self.queue:
+            self.queue.remove(user)
+        self.undo_list.append(("paused", user))
+        messages = [
+            (
+                user,
+                "You were paused because you missed your turn. "
+                "Use /unpause when you are ready!",
+            ),
+            (None, f"{self._name(user)} was paused (/undo)"),
+        ]
         return messages
 
     def pause(self, user: int) -> str:

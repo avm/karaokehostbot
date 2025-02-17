@@ -142,7 +142,7 @@ def test_pause():
             "You were paused because you missed your turn. "
             "Use /unpause when you are ready!",
         ),
-        (None, "avm was paused"),
+        (None, "avm was paused (/undo)"),
     ]
     assert dj.next() == format_next("guest1", "01")
     dj.enqueue(3, "03")
