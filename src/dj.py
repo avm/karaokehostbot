@@ -229,7 +229,7 @@ class DJ:
         return True
 
     def peek_next(self) -> int | None:
-        if len(self.new_users + self.queue) < 2:
+        if len(self.new_users) + len(self.queue) <= 2:
             return None
         next = self._pop_next_singer()
         if next is not None:

@@ -88,8 +88,7 @@ async def test_markdown():
     assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
         "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
         "You are next in the queue. Add a song to your list to sing next!",
-        "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz\n\n"
-        "_Next in queue:_ @user\\_name",
+        "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz",
         "You are next in the queue. Add a song to your list to sing next!",
         "You may be called to sing next if the singer ahead of you is not ready",
         "Your list is empty",
@@ -102,7 +101,7 @@ async def test_buttons():
         "queue": [1],
         "user:1": ["https://youtu.be/xyzzy42"],
         "user:2": [],
-        "names": {1: "@user_name", 2: "@someone_else"},
+        "names": {1: "@user_name", 2: "@someone_else", 3: "@random"},
     }
     bot = KaraokeBot(
         db=db,
@@ -136,7 +135,7 @@ async def test_buttons():
     update = Update(update_id=200, callback_query=callback_query)
     await bot.button_callback(update, context=None)
 
-    bot.dj.new_users = [2]
+    bot.dj.new_users = [2, 3]
     bot.dj.user_song_lists[2].append("https://youtu.be/fizzbuzz")
 
     update = Update(update_id=201, message=make_message(101, "/next"))
@@ -146,9 +145,10 @@ async def test_buttons():
         "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
         "You are next in the queue. Add a song to your list to sing next!",
         "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz\n\n"
-        "_Next in queue:_ @user\\_name",
+        "_Next in queue:_ @random",
         "You are next in the queue. Add a song to your list to sing next!",
         "You may be called to sing next if the singer ahead of you is not ready",
+        "You may be called to sing next if the 2 singers ahead of you are not ready",
     ]
 
 
@@ -198,8 +198,7 @@ async def test_notready():
 
     print(tgbot.send_message.call_args_list)
     assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
-        "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42\n\n"
-        "_Next in queue:_ @someone\\_else",
+        "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
         "You are next in the queue. Get ready to sing!",
         "You were paused because you missed your turn. "
         "Use /unpause when you are ready!",
