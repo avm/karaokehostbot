@@ -40,6 +40,15 @@ async def websocket_client(driver, uri):
                 time.sleep(3)
 
                 try:
+                    autonav = driver.find_element(
+                        By.CSS_SELECTOR, ".ytp-autonav-toggle-button"
+                    )
+                    if autonav.get_attribute("aria-checked") == "true":
+                        autonav.click()
+                except Exception as e:
+                    print(f"Error: {e}")
+
+                try:
                     play_button = driver.find_element(
                         By.CSS_SELECTOR, "button.ytp-fullscreen-button"
                     )
