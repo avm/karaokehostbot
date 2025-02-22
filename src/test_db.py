@@ -1,4 +1,5 @@
 from dj import DJ
+from party import Party
 from copy import deepcopy
 
 
@@ -24,7 +25,7 @@ class CopyingDict:
 
 def test_storage():
     db = CopyingDict()
-    dj = DJ(db)
+    dj = DJ(Party(db, 0))
     dj.register(1, "avm")
     dj.enqueue(1, "Elvis")
     assert db["user:1"] == ["Elvis"]
@@ -52,7 +53,7 @@ def test_storage():
 
 def test_reload():
     db = CopyingDict()
-    dj = DJ(db)
+    dj = DJ(Party(db, 0))
     dj.register(1, "avm")
     dj.enqueue(1, "Elvis")
     assert db["user:1"] == ["Elvis"]
@@ -60,7 +61,7 @@ def test_reload():
     assert db["names"] == {1: "avm"}
     dj.enqueue(2, "Amanda Palmer")
 
-    dj = DJ(db)
+    dj = DJ(Party(db, 0))
 
     dj.next()  # Elvis
     assert db["queue"] == [1]
@@ -68,7 +69,7 @@ def test_reload():
     assert db["queue"] == [1, 2]
     assert db["new_users"] == []
 
-    dj = DJ(db)
+    dj = DJ(Party(db, 0))
 
     dj.register(2, "alice")
     dj.enqueue(2, "Nickelback")
@@ -76,14 +77,14 @@ def test_reload():
     assert db["queue"] == [2]
     dj.enqueue(1, "Doors")
 
-    dj = DJ(db)
+    dj = DJ(Party(db, 0))
 
     assert db["new_users"] == [1]
     assert db["queue"] == [2]
     assert db["user:1"] == ["Doors"]
     assert "user:2" not in db
 
-    dj = DJ(db)
+    dj = DJ(Party(db, 0))
 
     dj.remove()
     assert db["queue"] == []

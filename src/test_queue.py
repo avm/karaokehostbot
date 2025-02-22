@@ -1,4 +1,5 @@
 from dj import DJ
+from party import Party
 from telegram_markdown_text import MarkdownText
 from youtube import SongInfo
 
@@ -14,7 +15,7 @@ empty_queue = ("The queue is empty", "")
 
 
 def test_queue():
-    dj = DJ({})
+    dj = DJ(Party({}, 0))
     dj.register(1, "avm")
     dj.register(2, "alice")
     dj.enqueue(1, "01")
@@ -39,14 +40,14 @@ def test_queue():
 
 
 def test_duplicate():
-    dj = DJ({})
+    dj = DJ(Party({}, 0))
     dj.register(1, "avm")
     dj.enqueue(1, "01")
     assert dj.enqueue(1, "01") == False
 
 
 def test_clear():
-    dj = DJ({})
+    dj = DJ(Party({}, 0))
     dj.register(1, "avm")
     dj.register(2, "alice")
     dj.enqueue(1, "01")
@@ -62,7 +63,7 @@ def test_clear():
 
 
 def test_reset():
-    dj = DJ({})
+    dj = DJ(Party({}, 0))
     dj.register(1, "avm")
     dj.register(2, "alice")
     dj.enqueue(1, "01")
@@ -89,7 +90,7 @@ def test_reset():
 
 
 def test_empty_queue():
-    dj = DJ({})
+    dj = DJ(Party({}, 0))
     dj.register(1, "avm")
     dj.register(2, "alice")
     dj.enqueue(1, "01")
@@ -105,7 +106,7 @@ def test_empty_queue():
 
 
 def test_remove():
-    dj = DJ({})
+    dj = DJ(Party({}, 0))
     dj.register(1, "avm")
     dj.register(2, "alice")
     dj.enqueue(1, "01")
@@ -123,7 +124,7 @@ def test_remove():
 
 
 def test_pause():
-    dj = DJ({})
+    dj = DJ(Party({}, 0))
     dj.register(1, "avm")
     dj.register(2, "alice")
     dj.enqueue(1, "01")
@@ -160,7 +161,7 @@ def test_pause():
 
 
 def test_listall():
-    dj = DJ({})
+    dj = DJ(Party({}, 0))
     dj.register(1, "avm")
     dj.register(2, "alice")
     dj.register(3, "@avi_avi")
@@ -203,7 +204,7 @@ def test_listall():
 
 
 def test_pause_enqueue():
-    dj = DJ({})
+    dj = DJ(Party({}, 0))
     dj.pause(1)
     dj.enqueue(1, "01")
     dj.enqueue(1, "03")
@@ -219,7 +220,7 @@ class DummyFormatter(dict):
 
 def test_formatter():
     fmt = DummyFormatter({"01": "Baseballs — Umbrella"})
-    dj = DJ({}, formatter=fmt)
+    dj = DJ(Party({}, 0), formatter=fmt)
     dj.register(1, "avm")
     dj.register(2, "alice")
     dj.enqueue(1, "01")

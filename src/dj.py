@@ -40,15 +40,10 @@ class DJ:
         return f"user:{user}"
 
     def load_song_list(self, user: int) -> list[str]:
-        return self.party.get(self._song_list_key(user), [])
+        return self.party.load_song_list(user)
 
     def save_song_list(self, user: int) -> None:
-        queue = self.user_song_lists.get(user)
-        key = self._song_list_key(user)
-        if (not queue) and key in self.party:
-            del self.party[key]
-        elif queue:
-            self.party[key] = queue
+        self.party.save_song_list(user, self.user_song_lists.get(user, []))
 
     def _name(self, chat_id: int) -> str:
         return self.names.get(chat_id, str(chat_id))

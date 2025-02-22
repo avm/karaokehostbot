@@ -8,6 +8,16 @@ class Party:
             return key
         return f"party{self.id}:{key}"
 
+    def load_song_list(self, user_id: int) -> list[str]:
+        return self.db.get(f"user:{user_id}", [])
+
+    def save_song_list(self, user_id: int, song_list: list[str]) -> None:
+        key = f"user:{user_id}"
+        if (not song_list) and key in self.db:
+            del self.db[key]
+        elif song_list:
+            self.db[key] = song_list
+
     def __getattr__(self, name):
         return getattr(self.db, name)
 
