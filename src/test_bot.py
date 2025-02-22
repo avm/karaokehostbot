@@ -8,7 +8,7 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_request():
-    bot = KaraokeBot({}, ["admin_user"])
+    bot = KaraokeBot({"admins": {"admin_user"}})
     singer1 = Chat(id=1, first_name="Joe", username="singer1", type="private")
     singer2 = Chat(id=2, first_name="Jane", last_name="Eyre", type="private")
 
@@ -50,10 +50,10 @@ async def test_markdown():
         "user:1": ["https://youtu.be/xyzzy42"],
         "user:2": [],
         "names": {1: "@user_name", 2: "@someone_else"},
+        "admins": {"admin_user"},
     }
     bot = KaraokeBot(
         db=db,
-        admins=["admin_user"],
     )
 
     tgbot = AsyncMock()
@@ -102,10 +102,10 @@ async def test_buttons():
         "user:1": ["https://youtu.be/xyzzy42"],
         "user:2": [],
         "names": {1: "@user_name", 2: "@someone_else", 3: "@random"},
+        "admins": {"admin_user"},
     }
     bot = KaraokeBot(
         db=db,
-        admins=["admin_user"],
     )
 
     tgbot = AsyncMock()
@@ -159,10 +159,10 @@ async def test_notready():
         "user:1": ["https://youtu.be/xyzzy42"],
         "user:2": ["https://youtu.be/fizzbuzz"],
         "names": {1: "@user_name", 2: "@someone_else"},
+        "admins": {"admin_user"},
     }
     bot = KaraokeBot(
         db=db,
-        admins=["admin_user"],
     )
 
     tgbot = AsyncMock()

@@ -8,24 +8,29 @@ QueueEntry = namedtuple("QueueEntry", ["singer", "is_ready"])
 
 
 class DJ:
-    def __init__(self, db, formatter: VideoFormatter | None = None):
-        self.db = db
+    def __init__(self, party, formatter: VideoFormatter | None = None):
+        self.party = party
         self.formatter = formatter
-        self.names: dict[int, str] = self.db.get("names", {})
-        self.queue: list[int] = self.db.get("queue", [])
-        self.new_users: list[int] = self.db.get("new_users", [])
-        self.paused: set[int] = self.db.get("paused", set())
+        self.admins: set[str] = self.party.get("admins", set(["myltsev"]))
+        self.names: dict[int, str] = self.party.get("names", {})
+        self.queue: list[int] = self.party.get("queue", [])
+        self.new_users: list[int] = self.party.get("new_users", [])
+        self.paused: set[int] = self.party.get("paused", set())
         self.user_song_lists: dict[int, list[str]] = self.load_song_lists()
-        self.current: tuple[int, str] = self.db.get("current")
-        self.undo_list: list[tuple[str, int]] = self.db.get("undo_list", [])
+        self.current: tuple[int, str] = self.party.get("current")
+        self.undo_list: list[tuple[str, int]] = self.party.get("undo_list", [])
 
     def save_global(self):
-        self.db["names"] = self.names
-        self.db["queue"] = self.queue
-        self.db["new_users"] = self.new_users
-        self.db["current"] = self.current
-        self.db["paused"] = self.paused
-        self.db["undo_list"] = self.undo_list
+        self.party["admins"] = self.admins
+        self.party["names"] = self.names
+        self.party["queue"] = self.queue
+        self.party["new_users"] = self.new_users
+        self.party["current"] = self.current
+        self.party["paused"] = self.paused
+        self.party["undo_list"] = self.undo_list
+
+    def is_admin(self, user: str) -> bool:
+        return user in self.admins
 
     def load_song_lists(self):
         loaded = {user: self.load_song_list(user) for user in self._known_users()}
@@ -35,15 +40,15 @@ class DJ:
         return f"user:{user}"
 
     def load_song_list(self, user: int) -> list[str]:
-        return self.db.get(self._song_list_key(user), [])
+        return self.party.get(self._song_list_key(user), [])
 
     def save_song_list(self, user: int) -> None:
         queue = self.user_song_lists.get(user)
         key = self._song_list_key(user)
-        if (not queue) and key in self.db:
-            del self.db[key]
+        if (not queue) and key in self.party:
+            del self.party[key]
         elif queue:
-            self.db[key] = queue
+            self.party[key] = queue
 
     def _name(self, chat_id: int) -> str:
         return self.names.get(chat_id, str(chat_id))

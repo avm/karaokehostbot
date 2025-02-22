@@ -18,6 +18,7 @@ from aiohttp import web
 from dotenv import load_dotenv
 
 from dj import DJ
+from party import Party
 from youtube import VideoFormatter, SongInfo
 
 load_dotenv()
@@ -35,9 +36,6 @@ logger = logging.getLogger(__name__)
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
-
-# Admin user configuration
-ADMIN_USERNAMES = os.environ.get("ADMIN_USERNAMES", "").split(",")
 
 
 def is_url(text: str) -> bool:
@@ -61,12 +59,11 @@ async def maybe(coro):
 
 
 class KaraokeBot:
-    def __init__(self, db: shelve.Shelf, admins: list[str]):
+    def __init__(self, db: shelve.Shelf):
         self.formatter = (
             VideoFormatter(YOUTUBE_API_KEY, db) if YOUTUBE_API_KEY else None
         )
-        self.dj = DJ(db, self.formatter)
-        self.admins = set(admins)
+        self.dj = DJ(Party(db, 0), self.formatter)
         self.last_msg_with_buttons: Message | None = None
         self.websockets = []
 
@@ -392,7 +389,7 @@ class KaraokeBot:
         )
 
     def is_admin(self, username: str) -> bool:
-        return username in self.admins
+        return self.dj.is_admin(username)
 
 
 async def error_handler(update: object, context: CallbackContext) -> None:
@@ -401,7 +398,7 @@ async def error_handler(update: object, context: CallbackContext) -> None:
 
 def main() -> None:
     application = Application.builder().token(TOKEN).build()
-    bot = KaraokeBot(shelve.open("bot"), ADMIN_USERNAMES)
+    bot = KaraokeBot(shelve.open("bot"))
 
     application.add_handler(CommandHandler("start", bot.start))
     application.add_handler(CommandHandler("help", bot.start))
