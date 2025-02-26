@@ -3,6 +3,7 @@ import os
 import asyncio
 import logging
 import shelve
+from functools import wraps
 from telegram import Update, User, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from telegram.ext import (
     Application,
@@ -56,6 +57,20 @@ async def maybe(coro):
         await coro
     except Exception as e:
         logger.error(f"Error: {e}")
+
+
+def admin_only(func):
+    @wraps(func)
+    async def wrapper(self, update: Update, context: CallbackContext, *args, **kwargs):
+        message = update.message
+        if not (message and message.from_user and message.from_user.username):
+            return
+        if not self.is_admin(message.from_user.username):
+            await message.reply_text("Only the admin can use this command.")
+            return
+        return await func(self, update, context, *args, **kwargs)
+
+    return wrapper
 
 
 class KaraokeBot:
@@ -161,14 +176,10 @@ class KaraokeBot:
         if self.formatter:
             await self.formatter.register_url(song)
 
+    @admin_only
     async def next(self, update: Update, context: CallbackContext) -> None:
-        message = update.message
-        if not (message and message.from_user and message.from_user.username):
-            return
-        if not self.is_admin(message.from_user.username):
-            await message.reply_text("Only the admin can use this command.")
-            return
-        await self.next_impl(message)
+        assert update.message is not None
+        await self.next_impl(update.message)
 
     async def next_impl(self, message: Message) -> None:
         text, url = self.dj.next()
@@ -275,11 +286,9 @@ class KaraokeBot:
             text, reply_markup=self.generate_list_markup(songs)
         )
 
+    @admin_only
     async def admins(self, update: Update, context: CallbackContext) -> None:
         themselves = update.message.from_user.username
-        if not self.is_admin(themselves):
-            await update.message.reply_text("Only the admin can use this command.")
-            return
         await self.admins_impl(update, themselves)
 
     async def admins_impl(self, update: Update, themselves: str) -> None:
@@ -290,10 +299,8 @@ class KaraokeBot:
         text = self.dj.admins_cmd(words)
         await update.message.reply_text(text)
 
+    @admin_only
     async def notready(self, update: Update, context: CallbackContext) -> None:
-        if not self.is_admin(update.message.from_user.username):
-            await update.message.reply_text("Only the admin can use this command.")
-            return
         await self.notready_impl(update)
 
     async def notready_impl(self, update: Update) -> None:
@@ -303,19 +310,13 @@ class KaraokeBot:
                 chat_id = update.effective_message.chat_id
             await update.get_bot().send_message(chat_id=chat_id, text=text)
 
+    @admin_only
     async def remove(self, update: Update, context: CallbackContext) -> None:
-        if not self.is_admin(update.message.from_user.username):
-            await update.message.reply_text("Only the admin can use this command.")
-            return
-
         msg = self.dj.remove()
         await update.message.reply_text(msg)
 
+    @admin_only
     async def remove_with_id(self, update: Update, context: CallbackContext) -> None:
-        if not self.is_admin(update.message.from_user.username):
-            await update.message.reply_text("Only the admin can use this command.")
-            return
-
         index = int(update.message.text.removeprefix("/remove"))
         msg = self.dj.remove_with_id(index)
         await update.message.reply_text(msg)
@@ -325,22 +326,16 @@ class KaraokeBot:
         msg = self.dj.clear(update.message.chat_id)
         await update.message.reply_text(msg)
 
+    @admin_only
     async def undo(self, update: Update, context: CallbackContext) -> None:
-        if not self.is_admin(update.message.from_user.username):
-            await update.message.reply_text("Only the admin can use this command.")
-            return
-
         for to, msg in self.dj.undo():
             if to is None:
                 await update.message.reply_text(msg)
             else:
                 await update.get_bot().send_message(chat_id=to, text=msg)
 
+    @admin_only
     async def reset(self, update: Update, context: CallbackContext) -> None:
-        if not self.is_admin(update.message.from_user.username):
-            await update.message.reply_text("Only the admin can use this command.")
-            return
-
         messages = self.dj.reset()
         for chat_id, text in messages:
             try:
