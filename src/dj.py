@@ -32,6 +32,22 @@ class DJ:
     def is_admin(self, user: str) -> bool:
         return user in self.admins
 
+    def admins_cmd(self, modifications: list[str]):
+        if not modifications:
+            return self._format_admins()
+        for mod in modifications:
+            if mod.startswith("+"):
+                self.admins.add(mod[1:])
+            elif mod.startswith("-"):
+                self.admins.remove(mod[1:])
+            else:
+                return "Invalid modification: " + mod
+        self.save_global()
+        return self._format_admins()
+
+    def _format_admins(self) -> str:
+        return f"Admins: @{', @'.join(sorted(self.admins))}"
+
     def load_song_lists(self):
         loaded = {user: self.load_song_list(user) for user in self._known_users()}
         return defaultdict(list, loaded)

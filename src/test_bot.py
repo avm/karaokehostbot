@@ -200,7 +200,6 @@ async def test_notready():
     update.set_bot(tgbot)
     await bot.undo(update, context=None)
 
-    print(tgbot.send_message.call_args_list)
     assert [
         (call.kwargs["chat_id"], call.kwargs["text"])
         for call in tgbot.send_message.call_args_list
@@ -215,6 +214,52 @@ async def test_notready():
         (2, "@user_name was paused (/undo)"),
         (2, "@user_name is now unpaused"),
         (1, "You are now unpaused"),
+    ]
+
+
+@pytest.mark.asyncio
+async def test_admins():
+    db = {"admins": {"admin_user"}}
+    bot = KaraokeBot(db=db)
+
+    tgbot = AsyncMock()
+
+    admin = Chat(id=2, first_name="Admin", type="private", username="admin_user")
+    admin.set_bot(tgbot)
+
+    def make_message(message_id, text):
+        msg = Message(
+            from_user=admin,
+            message_id=message_id,
+            date=datetime.datetime.now(),
+            chat=admin,
+            text=text,
+        )
+        msg.set_bot(tgbot)
+        return msg
+
+    update = Update(update_id=201, message=make_message(101, "/admins"))
+    await bot.admins(update, context=None)
+
+    update = Update(
+        update_id=202, message=make_message(102, "/admins +new_admin +another_admin")
+    )
+    await bot.admins(update, context=None)
+
+    update = Update(update_id=203, message=make_message(103, "/admins -another_admin"))
+    await bot.admins(update, context=None)
+
+    update = Update(update_id=204, message=make_message(104, "/admins -admin_user"))
+    await bot.admins(update, context=None)
+
+    assert [
+        (call.kwargs["chat_id"], call.kwargs["text"])
+        for call in tgbot.send_message.call_args_list
+    ] == [
+        (2, "Admins: @admin_user"),
+        (2, "Admins: @admin_user, @another_admin, @new_admin"),
+        (2, "Admins: @admin_user, @new_admin"),
+        (2, "You cannot promote or demote yourself"),
     ]
 
 

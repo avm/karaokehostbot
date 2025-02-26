@@ -89,7 +89,8 @@ class KaraokeBot:
                         "/next — show next song to be performed",
                         "/remove — remove current singer because they have left",
                         "/notready — pause current singer and move on",
-                        "/RESET — clear all queues",
+                        "/reset — clear all queues",
+                        "/admins [+newadmin] [-oldadmin] — show or update the list of admins",
                     )
                     if self.is_admin(update.message.from_user.username)
                     else ()
@@ -274,6 +275,21 @@ class KaraokeBot:
             text, reply_markup=self.generate_list_markup(songs)
         )
 
+    async def admins(self, update: Update, context: CallbackContext) -> None:
+        themselves = update.message.from_user.username
+        if not self.is_admin(themselves):
+            await update.message.reply_text("Only the admin can use this command.")
+            return
+        await self.admins_impl(update, themselves)
+
+    async def admins_impl(self, update: Update, themselves: str) -> None:
+        words = update.message.text.removeprefix("/admins").strip().split()
+        if themselves in (w[1:] for w in words):
+            await update.message.reply_text("You cannot promote or demote yourself")
+            return
+        text = self.dj.admins_cmd(words)
+        await update.message.reply_text(text)
+
     async def notready(self, update: Update, context: CallbackContext) -> None:
         if not self.is_admin(update.message.from_user.username):
             await update.message.reply_text("Only the admin can use this command.")
@@ -414,7 +430,8 @@ def main() -> None:
     application.add_handler(CommandHandler("listall", bot.list_all_queues))
     application.add_handler(CommandHandler("pause", bot.pause))
     application.add_handler(CommandHandler("unpause", bot.unpause))
-    application.add_handler(CommandHandler("RESET", bot.reset))
+    application.add_handler(CommandHandler("reset", bot.reset))
+    application.add_handler(CommandHandler("admins", bot.admins))
     application.add_handler(CommandHandler("undo", bot.undo))
 
     application.add_handler(
