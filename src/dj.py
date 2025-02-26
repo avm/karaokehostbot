@@ -143,8 +143,10 @@ class DJ:
         return self.remove_with_id(user)
 
     def remove_with_id(self, user: int) -> str:
-        if user in self.queue:
-            self.queue.remove(user)
+        if user in self._known_users():
+            remove_if_present(self.new_users, user)
+            remove_if_present(self.queue, user)
+            remove_if_present(self.paused, user)
             self.save_global()
             if user in self.user_song_lists:
                 del self.user_song_lists[user]
@@ -321,3 +323,8 @@ class DJ:
             break
 
         return return_value
+
+
+def remove_if_present(queue: list[int] | set[int], user: int) -> None:
+    if user in queue:
+        queue.remove(user)

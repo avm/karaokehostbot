@@ -118,9 +118,12 @@ def test_remove():
     assert dj.remove() == "avm removed from the queue"
     assert dj.next() == format_next("alice", "02")
     assert dj.next() == format_next("alice", "04")
+    assert dj.remove_with_id(2) == "alice removed from the queue"
+    dj.enqueue(1, "Elvis")
+    assert dj.remove_with_id(1) == "avm removed from the queue"
     dj.enqueue(1, "Elvis")
     assert dj.next() == format_next("avm", "Elvis")
-    assert dj.next() == format_next("alice", "05")
+    assert dj.next() == empty_queue
 
 
 def test_pause():
