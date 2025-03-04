@@ -144,8 +144,7 @@ async def test_buttons():
     assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
         "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
         "You are next in the queue. Add a song to your list to sing next!",
-        "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz\n\n"
-        "_Next in queue:_ @random",
+        "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz",
         "You are next in the queue. Add a song to your list to sing next!",
         "You may be called to sing next if the singer ahead of you is not ready",
         "You may be called to sing next if the 2 singers ahead of you are not ready",

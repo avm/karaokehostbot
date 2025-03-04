@@ -14,7 +14,6 @@ from telegram.ext import (
     CallbackContext,
 )
 from telegram.constants import ParseMode
-from telegram_markdown_text import Italic
 from aiohttp import web
 from dotenv import load_dotenv
 
@@ -194,10 +193,7 @@ class KaraokeBot:
         except Exception as e:
             logger.error(f"Error sending message to websocket: {e}")
 
-        peek = self.dj.peek_next()
-        if peek:
-            notification = Italic("Next in queue:") + " " + self.dj._format_singer(peek)
-            text = text + "\n\n" + notification.escaped_text()
+        self.dj.peek_next()
 
         song_button = InlineKeyboardButton(text="▶️ Play song", url=url)
         not_ready_button = InlineKeyboardButton(
