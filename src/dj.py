@@ -3,15 +3,16 @@ from youtube import VideoFormatter, SongInfo
 from gettext import ngettext
 from telegram_markdown_text import MarkdownText
 from collections import namedtuple
+from party import Party
 
 QueueEntry = namedtuple("QueueEntry", ["singer", "is_ready"])
 
 
 class DJ:
-    def __init__(self, party, formatter: VideoFormatter | None = None):
+    def __init__(self, party: Party, formatter: VideoFormatter | None = None):
         self.party = party
         self.formatter = formatter
-        self.admins: set[str] = self.party.get("admins", set(["myltsev"]))
+        self.admins: set[str] = self.party.get("admins")
         self.names: dict[int, str] = self.party.get("names", {})
         self.queue: list[int] = self.party.get("queue", [])
         self.new_users: list[int] = self.party.get("new_users", [])

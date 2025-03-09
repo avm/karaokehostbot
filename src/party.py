@@ -1,7 +1,9 @@
 class Party:
-    def __init__(self, db, id: int = 0):
+    def __init__(self, db, id: int, admins: set[str] = set()):
         self.db = db
         self.id: int = id
+        if admins and ("admins" not in self):
+            self["admins"] = admins
 
     def _getkey(self, key: str) -> str:
         if self.id == 0:
@@ -22,7 +24,7 @@ class Party:
         return getattr(self.db, name)
 
     def __contains__(self, key):
-        return key in self.db
+        return self._getkey(key) in self.db
 
     def __getitem__(self, key):
         return self.db[self._getkey(key)]

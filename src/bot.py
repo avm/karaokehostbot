@@ -37,6 +37,8 @@ TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY")
 
+ADMIN_USERNAMES = os.environ.get("ADMIN_USERNAMES", "")
+
 
 def is_url(text: str) -> bool:
     return text.startswith("https://")
@@ -77,7 +79,7 @@ class KaraokeBot:
         self.formatter = (
             VideoFormatter(YOUTUBE_API_KEY, db) if YOUTUBE_API_KEY else None
         )
-        self.dj = DJ(Party(db, 0), self.formatter)
+        self.dj = DJ(Party(db, 0, set(ADMIN_USERNAMES.split(","))), self.formatter)
         self.last_msg_with_buttons: Message | None = None
         self.websockets = []
 
