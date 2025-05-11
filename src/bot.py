@@ -88,19 +88,24 @@ class KaraokeBot:
 
     async def start(self, update: Update, context: CallbackContext) -> None:
         assert update.message is not None
-        await update.message.reply_text(
+        await update.message.reply_html(
             "\n".join(
                 (
-                    "Welcome to the Karaoke Bot! Send a YouTube link to request a song.",
+                    "Welcome to the Karaoke Bot!",
+                    "",
+                    "Send a YouTube link to request a song. Send a search term like "
+                    "<code>beatles yesterday</code> to find a karaoke track.",
+                    "",
                     "Commands:",
-                    "/list — show your queue",
-                    "/listall — show all queues",
-                    "/clear — clear your queue",
+                    "/list — view and edit your song list",
+                    "/clear — clear your song list",
+                    "/queue — view singer queue",
                     "/pause — take a break from singing",
                     "/unpause — continue singing",
                 )
                 + (
                     (
+                        "",
                         "Admin only:",
                         "/next — show next song to be performed",
                         "/remove — remove current singer because they have left",

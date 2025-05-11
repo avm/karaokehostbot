@@ -74,6 +74,10 @@ async def test_markdown():
         msg.set_bot(tgbot)
         return msg
 
+    await bot.start(
+        update=Update(update_id=199, message=make_message(99, "/start")), context=None
+    )
+
     update = Update(update_id=200, message=make_message(100, "/next"))
     await bot.next(update, context=None)
 
@@ -87,7 +91,7 @@ async def test_markdown():
     update.set_bot(tgbot)
     await bot.list_songs(update, context=None)
 
-    assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
+    assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list][1:] == [
         "Singer: @user\\_name\nSong: https://youtu\\.be/xyzzy42",
         "You are next in the queue. Add a song to your list to sing next!",
         "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz",
