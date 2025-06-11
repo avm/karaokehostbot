@@ -178,30 +178,30 @@ def test_listall():
     dj.pause(2)
     assert dj.show_all_queues() == "\n\n".join(
         (
-            "All queues:",
+            "All singers:",
             "avm:\n\\(2 songs\\)",
             "alice:\n\\(queue empty\\)",
             "@avi\\_avi:\n\\(2 songs\\)",
-            "Paused users: alice",
+            "Paused singers: alice",
         )
     )
     assert dj.show_all_queues(requester=3) == "\n\n".join(
         (
-            "All queues:",
+            "All singers:",
             "avm:\n\\(2 songs\\)",
             "alice:\n\\(queue empty\\)",
             "@avi\\_avi:\nAA\nBB",
-            "Paused users: alice",
+            "Paused singers: alice",
         )
     )
     dj.pause(3)
     assert dj.show_all_queues(is_admin=True) == "\n\n".join(
         (
-            "All queues:",
+            "All singers:",
             "avm /remove1:\n01\n03",
             "alice /remove2:\n\\(queue empty\\)",
             "@avi\\_avi /remove3:\nAA\nBB",
-            "Paused users: alice, @avi\\_avi",
+            "Paused singers: alice, @avi\\_avi",
         )
     )
 

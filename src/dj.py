@@ -239,7 +239,7 @@ class DJ:
         all_queues = self.new_users + self.queue
         queues_str = (
             (
-                "All queues:\n\n"
+                "All singers:\n\n"
                 + "\n\n".join(
                     self.show_queue(
                         u,
@@ -250,15 +250,15 @@ class DJ:
                 )
             )
             if all_queues
-            else "No active queues"
+            else "No active singers"
         )
         paused_str = (
-            "Paused users: "
+            "Paused singers: "
             + ", ".join(
                 self._format_singer(user).escaped_text() for user in self.paused
             )
             if self.paused
-            else "No paused users"
+            else "No paused singers"
         )
         return f"{queues_str}\n\n{paused_str}"
 

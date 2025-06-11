@@ -426,6 +426,7 @@ def main() -> None:
     application.add_handler(CommandHandler("clear", bot.clear))
     application.add_handler(CommandHandler("list", bot.list_songs))
     application.add_handler(CommandHandler("listall", bot.list_all_queues))
+    application.add_handler(CommandHandler("queue", bot.list_all_queues))
     application.add_handler(CommandHandler("pause", bot.pause))
     application.add_handler(CommandHandler("unpause", bot.unpause))
     application.add_handler(CommandHandler("reset", bot.reset))
