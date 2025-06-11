@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Karaoke Queue</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #111;
+      color: #f0f0f0;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .current-singer {
+      background-color: #222;
+      padding: 2rem;
+      border-radius: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .singer-name {
+      font-size: 2.5rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+
+    .song-title {
+      font-size: 2rem;
+    }
+
+    .song-title a {
+      color: #4db8ff;
+      text-decoration: none;
+    }
+
+    .song-title a:hover {
+      text-decoration: underline;
+    }
+
+    .next-button {
+      font-size: 2rem;
+      padding: 0.75rem 2rem;
+      margin: 2rem 0;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+    }
+
+    .next-button:hover {
+      background-color: #218838;
+    }
+
+    table {
+      width: 100%;
+      table-layout: fixed;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      font-size: 1.75rem;
+    }
+
+    th {
+      font-weight: normal;
+      color: #aaa;
+    }
+
+    .paused {
+      opacity: 0.6;
+      font-style: italic;
+    }
+
+    .eta-col {
+      width: 6rem;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .singer-col {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="current" class="current-singer"></div>
+
+    <button id="nextButton" class="next-button">Next Singer</button>
+
+    <div class="queue">
+      <h2>Up Next</h2>
+      <table>
+        <thead>
+          <tr>
+            <th class="eta-col">ETA</th>
+            <th class="singer-col">Singer</th>
+          </tr>
+        </thead>
+        <tbody id="queueTableBody">
+          <!-- Queue rows will go here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    // ======= Configuration =======
+    const API_BASE = '';
+    const WS_URL = '/ws';  // WebSocket endpoint
+
+    const SONG_DURATION_MIN = 4;
+
+    // ======= DOM Elements =======
+    const currentDiv = document.getElementById('current');
+    const queueTableBody = document.getElementById('queueTableBody');
+    const nextButton = document.getElementById('nextButton');
+
+    // ======= Event Listeners =======
+    nextButton.addEventListener('click', () => {
+      fetch(`${API_BASE}/next`, { method: 'POST' }).catch(console.error);
+    });
+
+    // ======= Render Functions =======
+    function renderCurrent(current) {
+      currentDiv.innerHTML = `
+        <div class="singer-name">${escapeHTML(current.singer)}</div>
+        <div class="song-title">
+          <a href="${escapeHTML(current.url)}" target="_blank">
+            ${escapeHTML(current.title)}
+          </a>
+        </div>
+      `;
+    }
+
+    function renderQueue(queue) {
+      queueTableBody.innerHTML = '';
+      queue.forEach((entry, index) => {
+        const eta = SONG_DURATION_MIN * (index + 1);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="eta-col">${eta} min</td>
+          <td class="singer-col ${entry.paused ? 'paused' : ''}">
+            ${escapeHTML(entry.singer)}
+          </td>
+        `;
+        queueTableBody.appendChild(row);
+      });
+    }
+
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>"']/g, tag => (
+        {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[tag]
+      ));
+    }
+
+    // ======= WebSocket Setup =======
+    function connectWebSocket() {
+      const socket = new WebSocket(WS_URL);
+
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          renderCurrent(data.current);
+          renderQueue(data.queue);
+        } catch (err) {
+          console.error('Invalid JSON:', err);
+        }
+      };
+
+      socket.onclose = () => {
+        console.warn('WebSocket closed. Reconnecting in 2 seconds...');
+        setTimeout(connectWebSocket, 2000);
+      };
+
+      socket.onerror = (err) => {
+        console.error('WebSocket error:', err);
+        socket.close();
+      };
+    }
+
+    // ======= Init =======
+    connectWebSocket();
+  </script>
+</body>
+</html>

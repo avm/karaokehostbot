@@ -158,6 +158,7 @@ class KaraokeBot:
             await self.reply_text(message, "This song is already on your /list")
             return
         await self.reply_text(message, "Your song request has been added to your list.")
+        await self.update_websockets()
         if self.formatter:
             await self.formatter.register_url(song)
 
@@ -187,20 +188,22 @@ class KaraokeBot:
         assert update.message is not None
         await self.next_impl(update.message)
 
+    async def update_websockets(self, sockets=None) -> None:
+        queue_json = self.dj.get_queue_json()
+        for ws in sockets or self.websockets:
+            try:
+                await ws.send_str(queue_json)
+            except Exception as e:
+                logger.error(f"Error sending message to websocket: {e}")
+
     async def next_impl(self, message: Message) -> None:
         text, url = self.dj.next()
         if not url:
             await message.chat.send_message(text)
             return
 
-        try:
-            print(self.websockets)
-            for ws in self.websockets:
-                await ws.send_str(url)
-        except Exception as e:
-            logger.error(f"Error sending message to websocket: {e}")
-
         self.dj.peek_next()
+        await self.update_websockets()
 
         song_button = InlineKeyboardButton(text="▶️ Play song", url=url)
         not_ready_button = InlineKeyboardButton(
@@ -385,11 +388,13 @@ class KaraokeBot:
         user = update.message.from_user
         self._register(user)
         await update.message.reply_text(self.dj.pause(user.id))
+        await self.update_websockets()
 
     async def unpause(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
         self._register(user)
         await update.message.reply_text(self.dj.unpause(user.id))
+        await self.update_websockets()
 
     async def list_all_queues(self, update: Update, context: CallbackContext) -> None:
         is_admin = self.is_admin(update.message.from_user.username)
@@ -450,6 +455,7 @@ def main() -> None:
         print("preparing request")
         await ws.prepare(request)
         bot.websockets.append(ws)
+        await bot.update_websockets([ws])  # Send initial queue state
 
         try:
             async for msg in ws:
@@ -460,7 +466,7 @@ def main() -> None:
         return ws
 
     async def static_handler(request):
-        return web.FileResponse("interface.html")
+        return web.FileResponse("queue.html")
 
     async def init_http_server():
         app = web.Application()

@@ -220,6 +220,9 @@ class DummyFormatter(dict):
     def tg_format(self, url: str) -> MarkdownText:
         return MarkdownText(self.get(url, url))
 
+    def get_data(self, url: str) -> SongInfo:
+        return SongInfo(title=self.get(url, url), url=url, duration=0)
+
 
 def test_formatter():
     fmt = DummyFormatter({"01": "Baseballs — Umbrella"})
@@ -229,4 +232,8 @@ def test_formatter():
     dj.enqueue(1, "01")
     dj.enqueue(1, "03")
     assert dj.next() == format_next("avm", "Baseballs — Umbrella", "01")
+    assert dj.get_queue_json() == (
+        '{"current": {"singer": "avm", "title": "Baseballs — Umbrella", "url": "01"}, '
+        '"queue": [{"singer": "avm", "paused": false}]}'
+    )
     assert dj.next() == format_next("avm", "03")

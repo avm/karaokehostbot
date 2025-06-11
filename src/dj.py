@@ -4,6 +4,7 @@ from gettext import ngettext
 from telegram_markdown_text import MarkdownText
 from collections import namedtuple
 from party import Party
+import json
 
 QueueEntry = namedtuple("QueueEntry", ["singer", "is_ready"])
 
@@ -176,10 +177,10 @@ class DJ:
             return self.formatter.song_info(url)
         return SongInfo(title=url, duration=0, url=url)
 
-    def _format_song(self, song: str) -> MarkdownText:
+    def _format_song(self, url: str) -> MarkdownText:
         if self.formatter:
-            return self.formatter.tg_format(song)
-        return MarkdownText(song)
+            return self.formatter.tg_format(url)
+        return MarkdownText(url)
 
     def _format_singer(self, singer: int) -> MarkdownText:
         return MarkdownText(self._name(singer))
@@ -316,6 +317,25 @@ class DJ:
             f"Song: {self._format_song(song)}",
             song,
         )
+
+    def get_queue_json(self) -> str:
+        current_singer, current_song = self.current or (None, None)
+        data = None
+        if current_song and self.formatter:
+            data = self.formatter.get_data(current_song)
+        all_queues = self.new_users + self.queue
+        queue = {
+            "current": {
+                "singer": self._name(current_singer) if current_singer else "No singer",
+                "title": data.title if data else current_song or "",
+                "url": data.url if data else current_song or "",
+            },
+            "queue": [
+                {"singer": self._name(singer), "paused": singer in self.paused}
+                for singer in all_queues
+            ],
+        }
+        return json.dumps(queue, ensure_ascii=False)
 
     def _pop_next_singer(self) -> int | None:
         if self.new_users:
