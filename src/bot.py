@@ -4,7 +4,14 @@ import asyncio
 import logging
 import shelve
 from functools import wraps
-from telegram import Update, User, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from telegram import (
+    Update,
+    User,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    Message,
+    MaybeInaccessibleMessage,
+)
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -150,7 +157,7 @@ class KaraokeBot:
                         context.bot, message.chat_id, r
                     )
                 return
-            await message.reply_text("Invalid link. Please try again.")
+            await self.reply_text(message, "Invalid link. Please try again.")
             return
 
         enqueued = self.dj.enqueue(user.id, song)
@@ -164,8 +171,14 @@ class KaraokeBot:
 
     @staticmethod
     async def reply_text(
-        message: Message, text: str, show_error: bool = False, **kwargs
+        message: MaybeInaccessibleMessage | None,
+        text: str,
+        show_error: bool = False,
+        **kwargs,
     ) -> None:
+        if not isinstance(message, Message):
+            logger.error("Message inaccessible or None, cannot reply.")
+            return
         try:
             await message.reply_text(text, **kwargs)
         except Exception as e:
@@ -304,10 +317,12 @@ class KaraokeBot:
     async def admins_impl(self, update: Update, themselves: str) -> None:
         words = update.message.text.removeprefix("/admins").strip().split()
         if themselves in (w[1:] for w in words):
-            await update.message.reply_text("You cannot promote or demote yourself")
+            await self.reply_text(
+                update.message, "You cannot promote or demote yourself"
+            )
             return
         text = self.dj.admins_cmd(words)
-        await update.message.reply_text(text)
+        await self.reply_text(update.message, text)
 
     @admin_only
     async def notready(self, update: Update, context: CallbackContext) -> None:
@@ -323,26 +338,26 @@ class KaraokeBot:
     @admin_only
     async def remove(self, update: Update, context: CallbackContext) -> None:
         msg = self.dj.remove()
-        await update.message.reply_text(msg)
+        await self.reply_text(update.message, msg)
 
     @admin_only
     async def remove_with_id(self, update: Update, context: CallbackContext) -> None:
         index = int(update.message.text.removeprefix("/remove"))
         msg = self.dj.remove_with_id(index)
-        await update.message.reply_text(msg)
+        await self.reply_text(update.message, msg)
 
     async def clear(self, update: Update, context: CallbackContext) -> None:
         self._register(update.message.from_user)
         msg = self.dj.clear(update.message.chat_id)
-        await update.message.reply_text(msg)
+        await self.reply_text(update.message, msg)
 
     @admin_only
     async def undo(self, update: Update, context: CallbackContext) -> None:
-        for to, msg in self.dj.undo():
+        for to, text in self.dj.undo():
             if to is None:
-                await update.message.reply_text(msg)
+                await self.reply_text(update.message, text)
             else:
-                await update.get_bot().send_message(chat_id=to, text=msg)
+                await update.get_bot().send_message(chat_id=to, text=text)
 
     @admin_only
     async def reset(self, update: Update, context: CallbackContext) -> None:
@@ -350,7 +365,7 @@ class KaraokeBot:
         for chat_id, text in messages:
             try:
                 if chat_id is None:
-                    await update.message.reply_text(text)
+                    await self.reply_text(update.message, text)
                 else:
                     await update.get_bot().send_message(chat_id=chat_id, text=text)
             except Exception as e:
@@ -391,13 +406,13 @@ class KaraokeBot:
     async def pause(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
         self._register(user)
-        await update.message.reply_text(self.dj.pause(user.id))
+        await self.reply_text(update.message, self.dj.pause(user.id))
         await self.update_websockets()
 
     async def unpause(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
         self._register(user)
-        await update.message.reply_text(self.dj.unpause(user.id))
+        await self.reply_text(update.message, self.dj.unpause(user.id))
         await self.update_websockets()
 
     async def list_all_queues(self, update: Update, context: CallbackContext) -> None:
