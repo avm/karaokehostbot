@@ -163,11 +163,15 @@ class KaraokeBot:
             await self.formatter.register_url(song)
 
     @staticmethod
-    async def reply_text(message: Message, text: str, **kwargs) -> None:
+    async def reply_text(
+        message: Message, text: str, show_error: bool = False, **kwargs
+    ) -> None:
         try:
             await message.reply_text(text, **kwargs)
         except Exception as e:
             logger.error(f"Error sending message to {message.chat_id}: {e}")
+            if show_error:
+                await message.reply_text(f"Internal error: {e}")
 
     async def enqueue_from_callback(self, update: Update) -> None:
         assert update.callback_query
@@ -406,6 +410,7 @@ class KaraokeBot:
             text,
             parse_mode=ParseMode.MARKDOWN_V2,
             disable_web_page_preview=True,
+            show_error=True,
         )
 
     def is_admin(self, username: str) -> bool:
