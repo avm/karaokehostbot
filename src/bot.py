@@ -163,9 +163,9 @@ class KaraokeBot:
             await self.formatter.register_url(song)
 
     @staticmethod
-    async def reply_text(message: Message, text: str) -> None:
+    async def reply_text(message: Message, text: str, **kwargs) -> None:
         try:
-            await message.reply_text(text)
+            await message.reply_text(text, **kwargs)
         except Exception as e:
             logger.error(f"Error sending message to {message.chat_id}: {e}")
 
@@ -398,11 +398,12 @@ class KaraokeBot:
 
     async def list_all_queues(self, update: Update, context: CallbackContext) -> None:
         is_admin = self.is_admin(update.message.from_user.username)
-        msg = self.dj.show_all_queues(
+        text = self.dj.show_all_queues(
             requester=update.message.chat.id, is_admin=is_admin
         )
-        await update.message.reply_text(
-            msg,
+        await self.reply_text(
+            update.message,
+            text,
             parse_mode=ParseMode.MARKDOWN_V2,
             disable_web_page_preview=True,
         )
