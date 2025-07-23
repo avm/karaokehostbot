@@ -97,7 +97,7 @@ async def test_markdown():
         "Singer: @someone\\_else\nSong: https://youtu\\.be/fizzbuzz",
         "You are next in the queue. Add a song to your list to sing next!",
         "You may be called to sing next if the singer ahead of you is not ready",
-        "Your list is empty",
+        "Song list is empty",
     ]
 
 

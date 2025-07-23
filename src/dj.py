@@ -189,7 +189,7 @@ class DJ:
         self, user: int, show_songs: bool = False, show_remove: bool = False
     ) -> str:
         their_queue = self.user_song_lists.get(user)
-        remove = "" if not show_remove else " /remove{}".format(user)
+        remove = "" if not show_remove else f" /remove{user} /list{user}"
         user_str = f"{self._format_singer(user)}{remove}:\n"
         if not their_queue:
             return user_str + r"\(queue empty\)"

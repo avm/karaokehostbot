@@ -297,20 +297,27 @@ class KaraokeBot:
                 await self.enqueue_from_callback(update, data.get("u", ""))
             case "move_up" | "move_down" | "delete":
                 index = data.get("i", 0)
-                await self.update_list(update, action, int(index))
+                uid = data.get("u", 0)
+                await self.update_list(update, uid, action, int(index))
 
-    async def update_list(self, update: Update, action: str, index: int) -> None:
+    async def update_list(
+        self, update: Update, uid: int, action: str, index: int
+    ) -> None:
         user = update.callback_query.from_user
+        if uid != user.id and not self.is_admin(user.username):
+            logger.warning(f"non-admin user {user} attempts to modify others' lists")
+            return
+
         if action == "delete":
-            action_taken = self.dj.remove_song(user.id, index)
+            action_taken = self.dj.remove_song(uid, index)
         else:
-            action_taken = self.dj.move_song(user.id, action, index)
+            action_taken = self.dj.move_song(uid, action, index)
         if not action_taken:
             return
-        songs = self.dj.get_queue(user.id)
-        text = "Your list:" if songs else "Your list is empty"
+        songs = self.dj.get_queue(uid)
+        text = "Song list:" if songs else "Song list is empty"
         await update.callback_query.edit_message_text(
-            text, reply_markup=self.generate_list_markup(songs, user.id)
+            text, reply_markup=self.generate_list_markup(songs, uid)
         )
 
     @admin_only
@@ -378,12 +385,16 @@ class KaraokeBot:
     async def list_songs(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
         self._register(user)
-        songs = self.dj.get_queue(user.id)
-        text = "Your list:" if songs else "Your list is empty"
+
+        command_id = update.message.text.removeprefix("/list")
+        uid = int(command_id) if command_id else user.id
+
+        songs = self.dj.get_queue(uid)
+        text = "Song list:" if songs else "Song list is empty"
         await update.get_bot().send_message(
             chat_id=user.id,
             text=text,
-            reply_markup=self.generate_list_markup(songs, user.id),
+            reply_markup=self.generate_list_markup(songs, uid),
         )
 
     @staticmethod
@@ -464,6 +475,12 @@ def main() -> None:
         MessageHandler(
             filters.Regex(r"^/remove\d+$"),
             lambda update, context: bot.remove_with_id(update, context),
+        )
+    )
+    application.add_handler(
+        MessageHandler(
+            filters.Regex(r"^/list\d+$"),
+            lambda update, context: bot.list_songs(update, context),
         )
     )
 
