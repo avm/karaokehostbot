@@ -3,6 +3,7 @@ import os
 import asyncio
 import logging
 import shelve
+import json
 from functools import wraps
 from telegram import (
     Update,
@@ -81,6 +82,11 @@ def admin_only(func):
     return wrapper
 
 
+def btn(text: str, action: str, **params) -> InlineKeyboardButton:
+    cb_data = json.dumps({"a": action} | params, separators=(",", ":"))
+    return InlineKeyboardButton(text, callback_data=cb_data)
+
+
 class KaraokeBot:
     def __init__(self, db: shelve.Shelf):
         self.formatter = (
@@ -129,7 +135,7 @@ class KaraokeBot:
     async def send_search_result_with_thumbnail(self, bot, chat_id, result) -> None:
         await bot.sendPhoto(chat_id, result["thumbnail"])
 
-        button = [[InlineKeyboardButton("Add to my list", callback_data=result["url"])]]
+        button = [[btn("Add to my list", "add", u=result["url"])]]
         reply_markup = InlineKeyboardMarkup(button)
 
         text = f"{result['title']}\n<i>{result['channel']}</i>"
@@ -164,7 +170,7 @@ class KaraokeBot:
         if not enqueued:
             await self.reply_text(message, "This song is already on your /list")
             return
-        await self.reply_text(message, "Your song request has been added to your list.")
+        await self.reply_text(message, "Your song request has been added to your /list")
         await self.update_websockets()
         if self.formatter:
             await self.formatter.register_url(song)
@@ -186,16 +192,15 @@ class KaraokeBot:
             if show_error:
                 await message.reply_text(f"Internal error: {e}")
 
-    async def enqueue_from_callback(self, update: Update) -> None:
+    async def enqueue_from_callback(self, update: Update, song: str) -> None:
         assert update.callback_query
         user = update.callback_query.from_user
         self._register(user)
-        song = update.callback_query.data
         if not self.dj.enqueue(user.id, song):
             return
         await self.reply_text(
             update.callback_query.message,
-            "Your song request has been added to your list.",
+            "Your song request has been added to your /list",
         )
         if self.formatter:
             await self.formatter.register_url(song)
@@ -223,10 +228,8 @@ class KaraokeBot:
         await self.update_websockets()
 
         song_button = InlineKeyboardButton(text="▶️ Play song", url=url)
-        not_ready_button = InlineKeyboardButton(
-            text="⏳ Singer not ready", callback_data="not_ready"
-        )
-        next_button = InlineKeyboardButton(text="⬇️ Next singer", callback_data="next")
+        not_ready_button = btn("⏳ Singer not ready", "not_ready")
+        next_button = btn("⬇️ Next singer", "next")
         inline_keyboard = InlineKeyboardMarkup(
             [[song_button], [not_ready_button], [next_button]]
         )
@@ -278,7 +281,9 @@ class KaraokeBot:
 
     async def button_callback(self, update: Update, context: CallbackContext) -> None:
         await update.callback_query.answer()
-        match update.callback_query.data:
+        data = json.loads(update.callback_query.data)
+
+        match action := data.get("a"):
             case "not_ready":
                 if self.is_admin(update.callback_query.from_user.username):
                     await self.notready_impl(update)
@@ -288,12 +293,11 @@ class KaraokeBot:
                     await self.next_impl(update.effective_message)
             case "noop":
                 return
-            case _:
-                action, _, index = update.callback_query.data.rpartition("_")
-                if action in ["move_up", "move_down", "delete"]:
-                    await self.update_list(update, action, int(index))
-                else:
-                    await self.enqueue_from_callback(update)
+            case "add":
+                await self.enqueue_from_callback(update, data.get("u", ""))
+            case "move_up" | "move_down" | "delete":
+                index = data.get("i", 0)
+                await self.update_list(update, action, int(index))
 
     async def update_list(self, update: Update, action: str, index: int) -> None:
         user = update.callback_query.from_user
@@ -306,7 +310,7 @@ class KaraokeBot:
         songs = self.dj.get_queue(user.id)
         text = "Your list:" if songs else "Your list is empty"
         await update.callback_query.edit_message_text(
-            text, reply_markup=self.generate_list_markup(songs)
+            text, reply_markup=self.generate_list_markup(songs, user.id)
         )
 
     @admin_only
@@ -379,27 +383,24 @@ class KaraokeBot:
         await update.get_bot().send_message(
             chat_id=user.id,
             text=text,
-            reply_markup=self.generate_list_markup(songs),
+            reply_markup=self.generate_list_markup(songs, user.id),
         )
 
     @staticmethod
-    def generate_list_markup(songs: list[SongInfo]) -> InlineKeyboardMarkup:
+    def generate_list_markup(songs: list[SongInfo], uid: int) -> InlineKeyboardMarkup:
         # Build the list display with buttons
         keyboard = []
         empty_button_text = "⠀"  # Invisible separator character (U+2800)
+
         for index, item in enumerate(songs):
             move_up_text = "⬆️" if index > 0 else empty_button_text
             move_down_text = "⬇️" if index < len(songs) - 1 else empty_button_text
             buttons = [
-                InlineKeyboardButton(move_up_text, callback_data=f"move_up_{index}"),
-                InlineKeyboardButton(
-                    move_down_text, callback_data=f"move_down_{index}"
-                ),
-                InlineKeyboardButton("❌", callback_data=f"delete_{index}"),
+                btn(move_up_text, "move_up", i=index, u=uid),
+                btn(move_down_text, "move_down", i=index, u=uid),
+                btn("❌", "delete", i=index, u=uid),
             ]
-            keyboard.append(
-                [InlineKeyboardButton(f"{index+1}. {item.title}", callback_data="noop")]
-            )
+            keyboard.append([btn(f"{index+1}. {item.title}", "noop")])
             keyboard.append(buttons)
         return InlineKeyboardMarkup(keyboard)
 

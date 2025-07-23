@@ -39,8 +39,8 @@ async def test_request():
     await bot.request_song(update, context=None)
 
     assert [call.kwargs["text"] for call in tgbot.send_message.call_args_list] == [
-        "Your song request has been added to your list.",
-        "Your song request has been added to your list.",
+        "Your song request has been added to your /list",
+        "Your song request has been added to your /list",
         "This song is already on your /list",
     ]
 
@@ -134,7 +134,7 @@ async def test_buttons():
         from_user=admin,
         id=101,
         chat_instance="chat_instance",
-        data="next",
+        data='{"a":"next"}',
         message=make_message(100, "/next"),
     )
     callback_query.set_bot(tgbot)
@@ -193,7 +193,7 @@ async def test_notready():
         from_user=admin,
         id=101,
         chat_instance="chat_instance",
-        data="not_ready",
+        data='{"a":"not_ready"}',
         message=make_message(100, "/undo"),
     )
     callback_query.set_bot(tgbot)
