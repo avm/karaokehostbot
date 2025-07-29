@@ -382,6 +382,25 @@ class KaraokeBot:
             except Exception as e:
                 logger.error(f"Error sending message to {chat_id}: {e}")
 
+    @admin_only
+    async def tell(self, update: Update, context: CallbackContext) -> None:
+        words = update.message.text.split(None, 2)
+        if len(words) != 3 or not words[1].isdigit():
+            await self.reply_text(update.message, "Usage: /tell UID some text")
+            return
+        uid = int(words[1])
+        await update.get_bot().send_message(chat_id=uid, text=words[2])
+
+    @admin_only
+    async def bcast(self, update: Update, context: CallbackContext) -> None:
+        text = update.message.text.removeprefix("/bcast ")
+        for uid in self.dj.names:
+            await asyncio.sleep(0.1)
+            try:
+                await update.get_bot().send_message(chat_id=uid, text=text)
+            except Exception:
+                pass
+
     async def list_songs(self, update: Update, context: CallbackContext) -> None:
         user = update.message.from_user
         self._register(user)
@@ -470,6 +489,8 @@ def main() -> None:
     application.add_handler(CommandHandler("reset", bot.reset))
     application.add_handler(CommandHandler("admins", bot.admins))
     application.add_handler(CommandHandler("undo", bot.undo))
+    application.add_handler(CommandHandler("tell", bot.tell))
+    application.add_handler(CommandHandler("bcast", bot.bcast))
 
     application.add_handler(
         MessageHandler(
