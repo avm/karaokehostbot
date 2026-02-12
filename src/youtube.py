@@ -121,4 +121,4 @@ class VideoFormatter:
                 "url": f"https://www.youtube.com/watch?v={item['id']['videoId']}",
             }
             for item in data["items"]
-        ]
+        ][:3]
